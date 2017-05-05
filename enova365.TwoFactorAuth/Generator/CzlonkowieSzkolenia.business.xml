@@ -1,0 +1,918 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<module xmlns="http://www.enova.pl/schema/business_struct.xsd" name="CzlonkowieSzkolenia" 
+        namespace="Soneta.CzlonkowieSzkolenia" versionName="enova">
+  
+  <import>..</import>
+  
+  <using>Soneta.Core</using>   
+  <using>Soneta.CRM</using>
+  <using>Soneta.Kadry</using>
+  <using>Soneta.Towary</using>
+  <using>Soneta.Handel</using>
+  <using>Soneta.Config</using>
+    
+  <enum name="TypUczestnika" />
+  <enum name="StanUczestnika" />
+  <enum name="RodzajCzlonka" />
+  <enum name="StatusZawodowy" />
+  <enum name="PłećOsoby" />
+  <enum name="StatusZgloszenia" />
+  <enum name="TypWyroznienia" />
+  <enum name="TypZajeciaSzkol"/>
+  <enum name="StanZajeciaSzkol"/>
+  <enum name="FormaSzkolenia" />
+  <enum name="StanSzkolenia" />
+  <enum name="StatusGrupySzkol"/>
+  <enum name="ZgloszeniePozDokTyp" />
+  <enum name="NaliczanieProporcjonalne" />
+  <enum name="OkresDoNaliczania" />
+  <enum name="StanSkładki" />
+  <enum name="StanZgloszeniaUczest"/>
+
+
+  <!-- UCZESTNIK -->
+
+  <table name="UczestnikBase" tablename="Uczestnicy" caption="Uczestnik, członek" guided="Root" tablecaption="Uczesticy, członkowie"
+         >
+    <interface>IPeselHost</interface>
+    <interface>INipHost</interface>
+    <interface>IPlecHost</interface>
+    <interface>IGIODOZgodnyHost</interface>
+    <interface>IGIODOWymianaDanychHost</interface>
+    <interface>IGIODOOświadczenieHost</interface>
+    <key name="WgKodu"  keyprimary="true" keyunique="true">
+      <keycol name="Kod"/>
+    </key>
+
+    <key name="WgNazwisko">
+      <keycol name="Nazwisko" />
+    </key>
+
+    <key name="WgNIP" >
+      <keycol name="NIP" />
+    </key>
+
+    <key name="WgEuVAT" >
+      <keycol name="EuVAT" />
+    </key>
+
+    <key name="WgPESEL" >
+      <keycol name="PESEL" />
+    </key>
+
+    <key name="WgNazwa">
+      <keycol name="Nazwa" />
+    </key>
+
+    <key name="WgNazwiskoRodowe">
+      <keycol name="NazwiskoRodowe"/>
+    </key>
+
+    <key name="WgImieNazwisko">
+      <keycol name="Imie"/>
+      <keycol name="Nazwisko" />
+    </key>
+
+    <col name="Typ" type="TypUczestnika" category="Ogólne"  selector="true" readonly="set" required="true" />
+    <col name="Oddzial" type="OddzialFirmy" required="true" category="Ogólne" relright="true"
+         caption="Oddział firmy" description="Oddział firmy do którego przypisany jest uczestnik." />
+
+    <col name="Kod" type="string" category="Ogólne" length="40"  required="true"  description="Kod uczestnika." />
+    <col name="Numer" type="string" category="Ogólne" length="40" required="true" description="Numer uczestnika." />
+    <col name="NIP" type="string" length="13" category="Ogólne" >
+      <verifier name="Soneta.Core.NipVerifier" />
+    </col>
+    <col name="EuVAT" type="string" length="16" category="Ogólne" />
+    <col name="PESEL" type="string" length="11" category="Ogólne" >
+      <verifier name="Soneta.Kadry.PeselVerifier" />
+      <verifier name="Soneta.Kadry.PeselPlecVerifier" />
+      <verifier name="UczestnikBase.UniquePeselVerifier" />
+      <verifier name="UczestnikBase.PeselDataVerifier" />
+    </col>
+
+    <col name="Kontrahent" type="Kontrahent" category="Ogólne" required="true"
+         delete="cascade"
+         keyunique="true"
+         relright="true"
+         />
+
+    <col name="Stan" type="StanUczestnika" />
+    <col name="OczekujacyNaSkreslenie" type="boolean" caption="Oczekujący na skreślenie" description="Oczekujący na skreślenie" />
+    <col name="Imie" type="string" category="Ogólne" length="32" caption="Imie uczestnika" description="Imie uczestnika." modifier="public virtual">
+      <attribute>Dictionary("Imiona")</attribute>
+    </col>
+    <col name="Nazwisko" type="string" category="Ogólne" length="64" caption="Nazwisko uczestnika" description="Nazwa uczestnika." modifier="public virtual" />
+    <col name="Nazwa" type="string" category="Ogólne" length="255" caption="Nazwa firmy" description="Nazwa firmy." modifier="public virtual" />
+
+    <col name="NazwiskoRodowe" type="string" category="Ogólne" length="64" caption="Nazwisko rodowe" description="Nazwisko rodowe uczestnika." />
+
+    <col name="DataUr" type="date" category="Ogólne" caption="Data urodzenia" description="Data urodzenia." >
+      <verifier name="UczestnikBase.PeselDataVerifier" />
+    </col>
+    <col name="MiejsceUr" type="string" category="Ogólne" length="80" caption="Miejsce urodzenia" description="Miejsce urodzenia." />
+    <col name="WojewodztwoUr" type="Wojewodztwa" />
+
+    <col name="Plec" type="PłećOsoby" category="Ogólne" >
+      <verifier name="PeselPlecVerifier" />
+    </col>
+    <col name="ImieOjca" type="string" category="Ogólne" length="32" caption="Imie ojca uczestnika" description="Imie ojca uczestnika." >
+      <attribute>Dictionary("Imiona")</attribute>
+    </col>
+    <col name="ImieMatki" type="string" category="Ogólne" length="32" caption="Imie matki uczestnika" description="Imie matki uczestnika." >
+      <attribute>Dictionary("Imiona")</attribute>
+    </col>
+    <col name="Komunikator" type="string" category="Ogólne" length="100" caption="" description="" />
+    <col name="Rodzaj" type="RodzajCzlonka"  modifier="public virtual" />
+    <col name="NrRewidenta" type="string" category="Ogólne" length="40" caption="Numer rewidenta" description="Numer rewidenta." />
+
+    <col name="StatusZawodowy" type="StatusZawodowy" />
+
+    <col name="JednostkaOrg" type="string" category="Ogólne" length="80" caption="Przynależność do koła" description="Przynależność do koła." >
+      <attribute>Dictionary("CzSz.Ucz.JedOr", ManualList=true)</attribute>
+    </col>
+
+    <col name="Klub" type="string" category="Ogólne" length="80" caption="Przynależność do klubu"  description="Przynależność do klubu." >
+      <attribute>Dictionary("CzSz.Ucz.Klub", ManualList=true)</attribute>
+    </col>
+
+    <col name="Wyksztalcenie" type="string" category="Ogólne" length="80" caption="Wykształcenie" description="Wykształcenie." >
+      <attribute>Dictionary("CzSz.Ucz.Wykszt", ManualList=true)</attribute>
+    </col>
+
+
+    <col name="TytulNaukowy" type="string" category="Ogólne" length="40" caption="Tytul naukowy" description="Tytul naukowy.">
+      <attribute>Dictionary("CzSz.Ucz.TytNauk", ManualList=true)</attribute>
+    </col>
+
+    <col name="TytulZawodowy" type="string" category="Ogólne" length="40" caption="Tytul zawodowy" description="Tytul zawodowy.">
+      <attribute>Dictionary("CzSz.Ucz.TytZaw", ManualList=true)</attribute>
+    </col>
+
+    <col name="RodzajFirmy" type="string" category="Ogólne" length="80" caption="Rodzaj firmy" description="Rodzaj firmy." >
+      <attribute>Dictionary("CzSz.Ucz.RdzFrmy", ManualList=true)</attribute>
+    </col>
+
+    <col name="Firma" type="Kontrahent" category="Ogólne"  />
+
+    <col name="Stanowisko" type="string" category="Ogólne" length="40" caption="Stanowisko" description="Stanowisko." >
+      <attribute>Dictionary("CzSz.Ucz.Stnw", ManualList=true)</attribute>
+    </col>
+
+    <col name="Skladka" type="currency" />
+
+    <col name="DyplomStan" type="StanUczestnika" modifier="public virtual"  />
+    <col name="DyplomWyksztalcenie" type="boolean" description="Wykształcenie średnie lub wyższe."/>
+    <col name="DyplomPraktyka" type="boolean" description="Praktyka zawodowa."/>
+    <col name="DyplomNiekaralnosc" type="boolean" description="Zaświadczenie o niekaralności."/>
+    <col name="DyplomPrzyrzeczenie" type="boolean" description="Potwierdzenie złożenia przyrzeczenia."/>
+    <col name="DyplomZwolnionyUDZ" type="boolean" description="Zwolniony z Ustawicznego Szkolenia Zawodowego."/>
+
+    <col name="RodzajDzialalnosci" type="string" length="100">
+      <attribute>Dictionary("CzSz.Ucz.RdzDz", ManualList=true)</attribute>
+    </col>
+    <col name="Sygnatariusz" type="boolean" />
+    <col name="CertyfikatUPKR" type="boolean" description="Certyfikat na usługowe prowadzenie ksiąg rachunkowych."/>
+    <col name="SygnatariuszData" type="date" />
+    <col name="Staz" type="double" caption="Ilość lat w zawodzie" description="Ilość lat w zawodzie." />
+  </table>
+
+
+  <!-- HISTORIA UCZESTNIKA -->
+
+
+  <table  name="UczestnikHist" tablename="UczestnicyHist"
+          caption="Historia uczestnika, członka" tablecaption="Historia uczestników, członków"
+          >
+
+    <col name="Uczestnik" type ="UczestnikBase"
+         relname="Historia członka"
+         children = "UczestnikHist"
+         keyprimary="true"
+         delete="cascade"
+         />
+
+    <col name="Stan" type="StanUczestnika" />
+    <col name="DyplomStan" type="StanUczestnika" />
+    <col name="Data" type="date" caption="Data zmiany" description="Data zmiany."/>
+    <col name="Protokol" type="string" length="40" caption="Numer protokołu" description="Numer protokołu." />
+    <col name="Opis" type="string" length="100" caption="Dodatkowy opis" description="Dodatkowy opis."/>
+
+  </table>
+
+
+  <!-- DEFINICJA WYRÓŻNIENIA -->
+
+
+  <table name="DefWyroznienia" tablename="DefWyroznien" config="true" caption="Definicja wyróżnienia" tablecaption="Definicje wyróżnień" guided="Root">
+
+    <key name="WgSymbol" keyunique="true" keyprimary="true">
+      <keycol name="Symbol"/>
+    </key>
+
+    <key name="WgTyp">
+      <keycol name="Typ"/>
+    </key>
+    <col name="Typ" type="TypWyroznienia" required="true" />
+    <col name="Symbol" type="string" required="true" category="Ogólne" length="40" caption="Symbol wyróżnienia" description="Symbol wyróżnienia."/>
+    <col name="Numeracja" type="DefinicjaNumeracji" category="Ogólne" caption="Schemat numeracji dla szkoleń" description="Schemat numeracji dla szkoleń."/>
+    <col name="Nazwa" type="string" category="Ogólne" length="100" caption="Nazwa szkolenia" description="Nazwa szkolenia." />
+    <col name="Oddzial" type="OddzialFirmy" required="true" category="Ogólne" relright="true"
+         caption="Oddział firmy" description="Oddział firmy." />
+    <col name="NumerDodatkowy" type="boolean" description="Dodatkowy numer."/>
+
+  </table>
+
+
+
+  <!-- WYRÓŻNIENIE -->
+
+
+  <enum name="StanWyroznienia"/>
+  <table  name="Wyroznienie" tablename="Wyroznienia"
+          caption="Certyfikat, odznaczenie" tablecaption="Certyfikaty, odznaczenia" guided="Root">
+
+    <key name="WgZgloszenieUczestnikDef">
+      <keycol name="ZgloszenieUczestnik"/>
+      <keycol name="DefWyroznienia"/>
+    </key>
+
+    <col name="DefWyroznienia" type="DefWyroznienia" required="true" keyprimary="true" relright="true" />
+    <col name="Uczestnik" type ="UczestnikBase"
+         relname="Wyroznienia uczestnika"
+         children = "Wyroznienia"
+         >
+      <keycol name="Typ"/>
+    </col>
+
+    <col name="Typ" type="TypWyroznienia" required="true" readonly="true" />
+    <col name="Data" type="date" caption="Data uzyskania" description="Data uzyskania."/>
+    <col name="Numer" type="string" length="32" caption="Numer wyróżnienia" description="Numer wyróżnienia." modifier="public virtual"/>
+    <col name="NumerAuto" type="NumerDokumentu"  />
+    <col name="Nazwa" type="string" length="100" caption="Nazwa wyróżnienia" description="Nazwa wyróżnienia."/>
+    <col name="ZgloszenieUczestnik" type="ZgloszenieUczestnik" relname="Wyróżnienia zgłoszenia" children="Wyroznienia" >
+      <keycol name="Typ"/>
+    </col>
+    <col name="Uwagi" type="text" category="Ogólne" caption="Uwagi" description="Dodatkowe uwagi."/>
+    <col name="Anulowane" type="boolean" description="Wyróżnienie anulowane."  />
+    <col name="Stan" type="StanWyroznienia" category="Ogólne" />
+    <col name="Podpis1" caption="Podpis 1" type="string" length="200" />
+    <col name="Podpis2" caption="Podpis 2" type="string" length="200" />
+    <col name="Podpis3" caption="Podpis 3" type="string" length="200" />
+  </table>
+
+
+
+  <!-- ZAJĘCIA -->
+
+
+
+  <table  name="ZajecieSzkolBase" tablename="ZajeciaSzkol" caption="Zajęcie" guided="Root" tablecaption="Zajęcia">
+
+    <key name="WgNazwa">
+      <keycol name="Nazwa"/>
+    </key>
+
+    <col name="Nazwa" type="string" length="200" category="Ogólne" />
+    <col name="Typ" type="TypZajeciaSzkol" category="Ogólne"  selector="true" readonly="true" required="true" />
+
+    <col name="PrzedmiotSzkol" type="PrzedmiotSzkol"  caption="Przedmiot realizowany na zajęciach" description="Przedmiot realizowany na zajęciach." keyprimary="true" />
+
+    <col name="Data" type="date" caption="Data zajęcia" description="Data zajęcia.">
+      <verifier name="ZajecieSzkolBase.SalaDostepnaVerifier" />
+      <verifier name="ZajecieSzkolBase.WykladowcaDostepnyVerifier" />
+      <verifier name="ZajecieSzkolBase.GrupaZespolDostepneVerifier" />
+      <verifier name="ZajecieSzkolBase.CzasZajeciaVerifier" />
+    </col>
+
+    <col name="CzasOd" type="time" caption="Godzina rozpoczęcia" description="Godzina rozpoczęcia.">
+      <verifier name="ZajecieSzkolBase.SalaDostepnaVerifier" />
+      <verifier name="ZajecieSzkolBase.WykladowcaDostepnyVerifier" />
+      <verifier name="ZajecieSzkolBase.GrupaZespolDostepneVerifier" />
+      <verifier name="ZajecieSzkolBase.CzasZajeciaVerifier" />
+    </col>
+
+    <col name="CzasDo" type="time" caption="Godzina zakończenia" description="Godzina zakończenia.">
+      <verifier name="ZajecieSzkolBase.SalaDostepnaVerifier" />
+      <verifier name="ZajecieSzkolBase.WykladowcaDostepnyVerifier" />
+      <verifier name="ZajecieSzkolBase.GrupaZespolDostepneVerifier" />
+      <verifier name="ZajecieSzkolBase.CzasZajeciaVerifier" />
+    </col>
+
+    <col name="Stan" type="StanZajeciaSzkol" caption="Stan zajęcia" description="Stan zajęcia szkoleniowego." required="true" />
+    <col name="Kontrahent" type="Kontrahent" caption="Kontrahent, któremu wynajmujemy salę" description="Kontrahent, któremu wynajmujemy salę." />
+    <col name="Uwagi" type="text"  caption="Dodatkowe uwagi" description="Dodatkowe uwagi."/>
+
+    <col name="GrupaSzkol" type="GrupaSzkol"
+     children="Zajecia"
+     relname="Zajęcia, prowadzone w grupie szkoleniowej"
+     setonlynull="true"
+         >
+      <verifier name="ZajecieSzkolBase.GrupaZespolDostepneVerifier" />
+    </col>
+
+    <col name="ZespolSzkol" type="ZespolSzkol"
+     children="Zajecia"
+     relname="Zajęcia, prowadzone w zespole szkoleniowym"
+         >
+      <verifier name="ZajecieSzkolBase.GrupaZespolDostepneVerifier" />
+    </col>
+    <col name="IloscGodzin" type="double" caption="Liczba godzin" description="Liczba jednostek lekcyjnych." />
+    <col name="DlugoscPrzerw" type="int" caption="Długość przerw" description="Sumaryczna długość przerw w minutach." >
+      <verifier name="ZajecieSzkolBase.CzasZajeciaVerifier" />
+    </col>
+    <col name="NieWliczac" type="boolean" description="Nie wliczać do wymiaru godzin."  />
+    
+  </table>
+
+
+
+  <!-- WYKŁADOWCY -->
+
+
+
+  <table name="WykladowcaSzkol" tablename="WykladowcySzkol" caption="Wykładowca" tablecaption="Wykładowcy" guided="Root">
+
+    <key name="WgKod" keyprimary="true" keyunique="true">
+      <keycol name="Kod"/>
+    </key>
+
+
+    <col name="Oddzial" type="OddzialFirmy" required="true" category="Ogólne" relright="true"
+         caption="Oddział firmy" description="Oddział firmy do którego przypisana jest sala." />
+    <col name="Pracownik" type="Pracownik" category="Ogólne" />
+
+    <col name="Kod" type="string" category="Ogólne" length="40"  required="true"  description="Kod wykładowcy." />
+    <col name="Imie" type="string" category="Ogólne" length="40" caption="Imie pracownika" description="Imie pracownika." />
+    <col name="Nazwisko" type="string" category="Ogólne" length="40" caption="Nazwisko pracownika" description="Nazwa pracownika."  />
+    <col name="TytulNaukowy" type="string" category="Ogólne" length="40" caption="Tytul naukowy" description="Tytul naukowy.">
+      <attribute>Dictionary("CzSz.Ucz.TytNauk", ManualList=true)</attribute>
+    </col>
+    <col name="Doswiadczenie" type="text" category="Ogólne" caption="Doświadczenie zawodowe" description="Doświadczenie zawodowe." />
+    <col name="Kontakt" type="Kontakt" category="Ogólne"/>
+    <col name="Wizytator" type="boolean" category="Ogólne" caption="Wizytator" />
+    <col name="Egzaminator" type="boolean" category="Ogólne" caption="Egzaminator" />
+  </table>
+
+
+
+  <!-- ZAJECIE-WYKLADOWCA -->
+
+
+  <enum name="TypZajeciaWykladowcy" />
+  <table name="ZajecieWykladowca" tablename="ZajeciaWykl" caption="Wykładowca na zajęciu" tablecaption="Wykładowcy">
+    <col name="Zajecie" type="ZajecieSzkolBase" required="true"
+         keyprimary="true"
+         keyunique="true"
+         delete="cascade"
+         >
+      <keycol name="Wykladowca" />
+    </col>
+    <col name="Wykladowca" type="WykladowcaSzkol" required="true" />
+    <col name="Typ" type="TypZajeciaWykladowcy" description="Rola wykładowcy na zajęciu."/>
+  </table>
+
+
+  <!-- SALA -->
+
+
+  <table name="SalaSzkol" tablename="SaleSzkol" caption="Sala szkoleniowa" tablecaption="Sale szkoleniowe" guided="Root">
+
+    <key name="WgSymbol" keyunique="true" keyprimary="true">
+      <keycol name="Symbol" />
+    </key>
+
+    <col name="Oddzial" type="OddzialFirmy" required="true" category="Ogólne" relright="true"
+         caption="Oddział firmy" description="Oddział firmy do którego przypisana jest sala." />
+    <col name="Symbol" type="string" required="true" category="Ogólne" length="40" caption="Symbol sali" description="Symbol sali."/>
+    <col name="Nazwa" type="string" category="Ogólne" length="100" caption="Nazwa sali" description="Nazwa sali."/>
+    <col name="IloscMiejsc" type="int" category="Ogólne" caption="Ilość miejsc" description="Ilość miejsc w sali."/>
+    <col name="Opis" type="text" category="Ogólne" caption="Opis sali" description="Dodatkowy opis sali."/>
+    <col name="LaczonaZ" type="SalaSzkol" caption="Sala, z którą można połączyć bieżącą salę" description="Sala, z którą można połączyć bieżącą salę." />
+
+  </table>
+
+
+
+  <!-- ZAJECIE-SALA -->
+
+
+
+  <table name="ZajecieSala" tablename="ZajeciaSale">
+    <col name="Zajecie" type="ZajecieSzkolBase" required="true" keyprimary="true" keyunique="true" delete="cascade">
+      <keycol name="Sala"/>
+    </col>
+    <col name="Sala" type="SalaSzkol" required="true" />
+  </table>
+
+
+
+  <!-- RODZAJ SZKOLENIA -->
+
+
+
+  <table name="RodzajSzkol" tablename="RodzajeSzkol" caption="Rodzaj szkolenia" tablecaption="Rodzaje szkoleń" guided="Root">
+
+    <!--[11187][7.8.2][CRM 7.8.2]: Usunąć indeks RodzajeSzkol.Nazwa-->
+    <!--<key name="WgNazwa">
+      <keycol name="Nazwa"/>
+    </key>-->
+    <interface>IElementSlownika</interface>
+    
+    <key name="WgSymbol" keyunique="true" keyprimary="true">
+      <keycol name="Symbol"/>
+    </key>
+
+    <col name="Oddzial" type="OddzialFirmy" required="true" category="Ogólne" relright="true"
+         caption="Oddział firmy" description="Oddział firmy." />
+    <col name="Symbol" type="string" category="Ogólne" length="40" required="true" caption="Symbol szkolenia" description="Symbol szkolenia."/>
+    <col name="Nazwa" type="string" category="Ogólne" length="513" caption="Nazwa szkolenia" description="Nazwa szkolenia." />
+    <col name="Forma" type="FormaSzkolenia" caption="Forma szkolenie" description="Forma szkolenie." required="true"/>
+    <col name="Stan" type="StanSzkolenia" caption="Stan szkolenia" description="Stan szkolenia." required="true" />
+    <col name="Opis" type="text" category="Ogólne" caption="Opis szkolenia" description="Opis szkolenia." />
+    <col name="Cel" type="text" category="Ogólne" caption="Cel szkolenia" description="Cel szkolenia." />
+    <col name="FakturowanieMat" type="boolean" description="Fakturowanie materiałów" />
+    <col name="Wpisowe" type="boolean" description="Wpisowe na studia" />
+    <col name="DrukZakresow" type="boolean" description="Drukuj tylko zakresy." />
+    <col name="Unijne" type="boolean" description="Określa szkolenie unijne."  />
+
+    <col name="Modulowe" type="boolean" description="Określa, czy szkolenie składa sie z modułów."  />
+    <col name="OgraniczPrzedmioty" type ="boolean" description ="Określa, czy zawęzic listę przedmiotów na grupie szkoleniowej." />
+  </table>
+
+
+
+
+  <!-- RODZAJSZKOLENIA - WYROZNIENIE -->
+
+
+
+  <table name="RodzajSzkolWyroznienie" tablename="RdzSzkWyroz" caption="Wyróżnienie" tablecaption="Wyrożnienia wydawane w ramach szkolenia.">
+    <col name="RodzajSzkol" type="RodzajSzkol"  keyprimary="true" children="Wyroznienia" relname="Wyróżnienia w ramach szkolenia"/>
+    <col name="DefWyroznienia" type="DefWyroznienia" />
+    <col name="WymagaZaliczenia" type="boolean" />
+    <col name="Aktywny" type ="boolean" description="Określa, czy wyróżnienie ma być brane pod uwagę podczas generowania certyfikatów" />
+  </table>
+
+
+
+  <!-- PRZEDMIOT -->
+
+
+  <table name="PrzedmiotSzkol" tablename="PrzedmiotySzkol" caption="Przedmiot" tablecaption="Przedmioty" guided="Root">
+
+    <key name="WgNazwa" keyprimary="true" keyunique="true">
+      <keycol name="Nazwa" />
+      <keycol name="Oddzial" />
+    </key>
+
+    <col name="Nazwa" type="string" category="Ogólne" length="200" caption="Nazwa przedmiotu" description="Nazwa przedmiotu." />
+    <col name="Opis" type="text" category="Ogólne" caption="Opis przedmiotu" description="Opis przedmiotu." />
+    <col name="Oddzial" type="OddzialFirmy" required="true" category="Ogólne" relright="true"
+         caption="Oddział firmy" description="Oddział firmy." />
+    <col name="Zakres" type="PrzedmiotSzkol" category="Ogólne" caption="Zakres przedmiotu" description="Zakres przedmiotu."
+         />
+  </table>
+
+
+
+  <!-- RODZAJSZKOLENIA - PRZEDMIOT -->
+
+
+
+  <table name="RodzajSzkolPrzedmiot" tablename="RdzSzPrzedmioty" caption="Przedmiot na rodzaju szkolenia" tablecaption="Przedmioty">
+
+    <key name="WgRodzajPrzedmiot" keyunique="true" keyprimary="true">
+      <keycol name="RodzajSzkol"/>
+      <keycol name="PrzedmiotSzkol"/>
+    </key>
+
+    <col name="RodzajSzkol" type="RodzajSzkol"
+          children="Przedmioty"
+         relname="Przedmioty w ramach szkolenia"
+         />
+
+    <col name="PrzedmiotSzkol" type="PrzedmiotSzkol" />
+    <col name="IloscGodzin" type="double" caption="Liczba godzin" description="Liczba godzin w ramach całego szkolenia" />
+    <col name="Modul" type="ModulSzkol" caption="Moduł szkoleniowy" description="Moduł z którym powiązany jest przedmiot."/>
+  </table>
+
+
+
+  <!-- GRUPASZKOL - MATERIAŁ -->
+  
+  
+  
+  <table name="GrupaMaterial" tablename="GrupyMaterialy" caption="Materiał" tablecaption="Materiały">
+
+    <col name="GrupaSzkol" type="GrupaSzkol"
+         children="Materialy"
+         relname="Materiały, mymagane na szkolenie"
+         setonlynull="true"
+         keyprimary="true"
+         required="true"
+         delete="cascade"
+         />
+
+    <col name="Towar" type="Towar" required="true"/>
+  </table>
+
+
+
+  <!-- GRUPA SZKOLENIOWA -->
+
+
+
+
+  <table name="GrupaSzkol" tablename="GrupySzkol" caption="Grupa szkoleniowa" tablecaption="Grupy szkoleniowe" guided="Root">
+    <interface>IElementSlownika</interface>
+    <interface>IZrodloHarmWplaty</interface>
+    <key name="WgNumer" keyprimary="true" keyunique="true">
+      <keycol name="Numer"/>
+    </key>
+
+    <col name="RodzajSzkol" type="RodzajSzkol" category="Ogólne" description="Rodzaj szkolenia."
+         required="true" relright="true"
+         children="GrupySzkol"
+         relname="Grupy szkoleniowe"
+         />
+
+    <col name="Oddzial" type="OddzialFirmy" required="true" category="Ogólne" relright="true"
+         caption="Oddział firmy" description="Oddział firmy." />
+    <col name="Numer" type="string" length="32" category="Ogólne" caption="Numer szkolenia" required="true" description="Numer szkolenia." >
+      <!--<verifier name="GrupaSzkol.UniqueNumerVerifier" onadded="true"/>-->
+    </col>
+
+    <col name="Tryb" type="TrybZajec" category="Ogólne"  />
+    <col name="DataOd" type="date" category="Ogólne" caption="Data rozpoczęcia" description="Data rozpoczęcia.">
+      <verifier name="GrupaSzkol.GrupaSzkolDataVerifier" onadded="true"/>
+    </col>
+    
+    <col name="DataDo" type="date" category="Ogólne" caption="Data zakończenia" description="Planowana data zakończenia.">
+      <verifier name="GrupaSzkol.GrupaSzkolDataVerifier" onadded="true"/>
+    </col>
+    
+    <col name="Uwagi" type="text" category="Ogólne" caption="Uwagi" description="Dodatkowe uwagi."/>
+    <col name="StatusGrupySzkol" type="StatusGrupySzkol" category="Ogólne" />
+    <col name="Towar" type="Towar" category="Ogólne" caption="Towar" description="Towar z którym powiązane jest szkolenie."/>
+    <col name="TowarWpisowe" type="Towar" category="Ogólne" caption="Towar" description="Towar z którym powiązane jest wpisowe na studia."/>
+    <col name="DataZamkniecia" type="date" category="Ogólne" caption="Data zamknięcia" description="Data zamknięcia grupy szkoleniowej." />
+
+    <col name="Modul" type="ModulSzkol" category="Ogólne" caption="Moduł" description="Moduł z którym powiązane jest szkolenie."/>
+    <col name="UczestnicyGrupowo" type="int" category="Ogólne" caption="Uczestnicy grupowo" description="Uczestnicy zgłoszeni grupowo." />
+  </table>
+
+  
+  <!-- DEFINICJA ZGŁOSZENIA NA SZKOLENIE -->
+  
+  
+  <table name="DefZgloszenia" tablename="DefZgloszen" config="true" caption="Definicja zgłoszenia" tablecaption="Definicje zgłoszeń" guided="Root">
+    <interface>IRightsSource</interface>
+    <key name="WgSymbol" keyunique="true" keyprimary="true">
+      <keycol name="Symbol"/>
+    </key>
+
+    <col name="Nazwa" type="string" category="Ogólne" length="64" caption="Nazwa zgłoszenia" description="Nazwa zgłoszenia."/>
+    <col name="Symbol" type="string" required="true" category="Ogólne" length="32" caption="Symbol zgłoszenia" description="Symbol zgłoszenia."/>
+    <col name="DrugiSymbol" type="string" category="Ogólne" length="32" caption="Alternatywny symbol zgłoszenia" description="Alternatywny symbol zgłoszenia."/>
+
+    <col name="Numeracja" type="DefinicjaNumeracji" category="Ogólne" caption="Schemat numeracji dla zgłoszeń" description="Schemat numeracji dla zgłoszeń."/>
+    <col name="Oddzial" type="OddzialFirmy" required="true" category="Ogólne" relright="true"
+         caption="Oddział firmy" description="Oddział firmy." />
+    <col name="Zbiorcze" type="boolean" caption="Zgłoszenie zbiorcze" description="Zgłoszenie zbiorcze." />
+    <col name="Blokada" type="boolean" caption="Zablokowane" description="Określa zablokowanie definicji."/>
+
+  </table>
+
+
+  <!-- ZGŁOSZENIE -->
+
+
+
+  <table  name="Zgloszenie" tablename="Zgloszenia" caption="Zgłoszenie" tablecaption="Zgłoszenia" guided="Root">
+
+    <key name="WgData" keyprimary="true">
+      <keycol name="Data" />
+    </key>
+
+    <col name="DefZgloszenia" type="DefZgloszenia" required="true" relright="true"/>
+    <col name="Numer" type="NumerDokumentu"  />
+    <col name="Data" type="date" caption="Data zgłoszenia" description="Data zgłoszenia na szkolenie." />
+    <col name="Kontrahent" type="Kontrahent" category="Ogólne" />
+    <col name="Zbiorcze" type="boolean" caption="Zgłoszenie zbiorcze" description="Zgłoszenie zbiorcze." />
+    <col name="Oddzial" type="OddzialFirmy" required="true" relright="true"
+         category="Ogólne" caption="Oddział firmy" description="Oddział firmy." />
+  </table>
+
+
+
+
+  <!-- ZGŁOSZENIE-UCZESTNIK -->
+
+
+
+
+  <table  name="ZgloszenieUczestnik" tablename="ZgloszeniaUczest" caption="Uczestnik" tablecaption="Uczestnicy">
+    <interface>IZrodloHarmWplaty</interface>
+
+    <key name="WgNumerZgl">
+      <keycol name="NumerZgl" />
+    </key>
+    
+    <col name="Zgloszenie" type="Zgloszenie" required="true"
+         children="Uczestnicy"
+         relname="Uczestnicy zgłoszenia"
+         keyprimary="true"
+         delete="cascade"
+         relright="true"
+         keyunique="false"
+         >
+    </col>
+
+    <col name="Uczestnik" type="UczestnikBase" required="true"
+         children="Zgloszenia"
+         relname="Zgłoszenia uczestnika"
+         relright="true"
+         >
+      <verifier name="ZgloszenieUczestnik.UniqueUczestnikGrupaVerifier" onadded="true"/>
+    </col>
+
+
+
+    <col name="ZespolSzkol" type="ZespolSzkol"
+         children="Uczestnicy"
+         relname="Uczestnicy zespołu szkoleniowego"
+         />
+
+    <col name="RodzajSzkol" type="RodzajSzkol" required="true" />
+
+
+
+    <col name="Tryb" type="TrybZajec" />
+    <col name="OtrzymujeMaterialy" type="boolean" />
+    
+    <!-- 
+    
+    7.7.3 skwp;
+    
+    Te pola przenoszę do ZgloszenieUczGrupa
+    
+    <col name="GrupaSzkol" type="GrupaSzkol"
+         children="Uczestnicy"
+         relname="Uczestnicy grupy szkoleniowej"
+         >
+      <verifier name="ZgloszenieUczestnik.UniqueUczestnikGrupaVerifier" onadded="true"/>
+    </col>
+    <col name="IndywidualnyKoszt" type="boolean" />
+    <col name="IndywidualnaCena" type="currency" />
+    <col name="IndywidualnyRabat" type="percent" />
+    
+    -->
+    
+    <col name="StatusZgloszenia" type="StatusZgloszenia" />
+    <col name="Platnik" type="Kontrahent" />
+    <!-- V 2 -->
+    <col name="Uwagi" type="text" />
+    <col name="Zaliczone" type="boolean" />
+    <col name="OcenaKoncowa" type="string" length="16"/>
+    <col name="DataZaliczenia" type="date" description="Data zaliczenia kursu." />
+
+    <col name="ZgloszeniePierwotne" type="ZgloszenieUczestnik" />
+    <col name="DataPrzeniesienia" type="date" description="Data przeniesienia na inną grupę." />
+    <col name="KorespPlatnik" type="boolean" description="Korespondencja wysyłana na adres płatnika" />
+    <col name="HarmWplat" type="boolean" description="Określa czy jest indywidualny harmonogram wpłat." >
+      <verifier name="ZgloszenieUczestnik.HarmonogramVerifier" />
+    </col>
+    <col name="StanZgloszeniaUczest" type="StanZgloszeniaUczest" caption="Stan zgłoszenia" category="Ogólne" />
+    <col name="NumerZgl" type="string" length="255" category="Ogólne" caption="Numer zgłoszenie" />    
+    <col name="Egzamin" type="boolean" category="Ogólne" />
+  </table>
+
+
+
+
+  <!-- ZGŁOSZENIE-PŁATNIK -->
+
+
+
+  <table  name="ZgloszeniePlatnik" tablename="ZgloszeniaPlat" caption="Płatnik" tablecaption="Płatnicy">
+
+    <col name="ZgloszenieUczestnik" type="ZgloszenieUczestnik" required="true" keyprimary="true"
+         children="Platnicy"
+         relname="Płatnicy"
+         />
+
+    <col name="Data" type="date" caption="Data dodania" description="Data dodania."/>
+    <col name="Platnik" type="Kontrahent" />
+    <col name="Wartosc" type="currency" />
+  </table>
+
+
+
+  <!-- ZESPÓŁ SZKOLENIOWY -->
+
+
+
+  <table  name="ZespolSzkol" tablename="ZespolySzkol" caption="Zespół" tablecaption="Zespoły">
+
+    <col name="GrupaSzkol" type="GrupaSzkol" required="true" keyprimary="true"
+         children="Zespoly"
+         relname="Zespoły szkoleniowe"
+         keyclass="Lp" keyclasscol="Lp"
+         setonlynull="true"
+         />
+
+    <col name="Lp" type="int" batchfield="false" caption="Numer kolejny zespołu" />
+    <col name="Uwagi" type="text" category="Ogólne" caption="Uwagi" description="Dodatkowe uwagi."/>
+    <col name="WliczajDoZajec" type="boolean" caption="Wliczaj do zajęć zrealizowanych"/>
+  </table>
+
+
+
+
+  <!-- ZGŁOSZANIE-POZ.DOK.HAN -->
+
+
+
+
+  <table name="ZgloszeniePozDok" tablename="ZgloszeniaPozDok">
+    <col name="Typ" type="ZgloszeniePozDokTyp" />
+
+    <col name="Zgloszenie" type="ZgloszenieUczestnik" keyprimary="true" delete="cascade"
+         children="ZgloszeniaPozDok"
+         relname="ZgloszeniaPozDok1"
+         >
+      <keycol name="Typ"/>
+    </col>
+
+    <col name="Pozycja" type="PozycjaDokHandlowego" required="true" />
+    <col name="PozycjaRelacji" type="PozycjaRelacjiHandlowej"  />
+    <col name="GrupaSzkol" type="GrupaSzkol"
+        children="ZgloszeniaPozDok"
+        relname="ZgloszeniaPozDok2"
+         >
+      <keycol name="Typ"/>
+    </col>
+    <col name="Dokument" type="DokumentHandlowy" required="true" />
+
+    <col name="ZgloszenieUczGrupa" type="ZgloszenieUczGrupa" />
+    
+  </table>
+
+  <!-- SKŁADKI -->
+
+  <table name="DefSkladki" tablename="DefSkladek" caption="Definicje składek" config="true" guided="Root">
+    <interface>IRightsSource</interface>
+
+    <key name="WgSymbol" keyunique="true" keyprimary="true">
+      <keycol name="Symbol"/>
+    </key>
+
+    <!-- OGÓLNE -->
+    <col name="Symbol" type="string" length="12" required="true" category="Ogólne" important="true"
+			description="Skrótowa nazwa definicji dokumentu wykorzystywana do wyszukiwania definicji." />
+    <col name="Nazwa" type="string" length="30" required="true" category="Ogólne" important="true"
+			description="Pełna nazwa definicji dokumentu wykorzystywana do wyszukiwania deifnicji." />
+    <col name="Blokada" type="boolean" category="Ogólne"
+      description="Określa zablokowanie definicji. Zablokowane definicje dokumentów nie będą wyświetlane w liście wyboru." />
+    <col name="Numeracja" type="DefinicjaNumeracji" category="Ogólne"
+      description="Schemat numeracji dla definicji składki." />
+    <!-- /OGÓLNE -->
+
+    <!-- PŁATNOŚCI -->
+    <col name="GeneracjaPlatnosci" type="boolean" category="Płatności"
+      description="Określa czy dokument generuje płatności." />
+    <col name="KsiegowanieKasowe" type="boolean" category="Płatności"
+      description="Określa czy dokument ma być księgowany metodą kasową, a nie memoriałową." />
+    <col name="DefinicjaEwidencji" type="DefinicjaDokumentu" name12="DefEwid" category="Płatności"
+			description="Informacja o miejscu umieszczenia dokumentu w ewidencji księgowej (sposobie księgowania)." />
+    <!-- /PŁATNOŚCI -->
+
+    <!-- NALICZANIE SKŁADEK-->
+    <col name="OkresNaliczania" type="OkresDoNaliczania" category="Naliczanie składek" />
+    <col name="NaliczanieProporcjonalne" type="NaliczanieProporcjonalne" category="Naliczanie składek" />
+    <col name="Skladka" type="currency" category="Naliczanie składek"
+      description="Wielkość naliczanej składki." />
+    <col name="SkladkaDeklarowana" type="boolean" category="Naliczanie składek"
+      description="Określan czy używać stawki deklarowanej." />
+    <col name="SkladkaWyliczana" type="boolean" category="Naliczanie składek"
+      description="Określa czy stawka jest wyliczana algorytmem." />
+    <col name="SkladkaAlgorytm" type="text" category="Naliczanie składek"
+      description="Kod wyliczania stawki." />
+    <!-- /NALICZANIE SKŁADEK -->
+
+  </table>
+
+  <table name="Skladka" tablename="Skladki" caption="Składka" tablecaption="Składki" guided="Root">
+    <interface>IDokumentPlatny</interface>
+    <interface>IDokumentKsiegowalny</interface>
+
+    <!-- OGÓLNE -->
+    <col name="Czlonek" type="UczestnikBase" category="Ogólne" keyprimary="true" children="Skladki" />
+
+    <col name="Oddzial" type="OddzialFirmy" required="true" category="Ogólne" caption="Oddział firmy"
+      description="Oddział firmy w którym naliczono składkę." />
+    <col name="DefSkladki" type="DefSkladki" required="true" category="Ogólne" caption="Definicja składki" relright="true" />
+    <col name="Stan" type="StanSkładki" category="Ogólne" />
+    <col name="ZaOkres" type="YearMonth" category="Ogólne"
+      description="Rok i miesiąc za który naliczona jest składka" />
+    <col name="Numer" type="NumerDokumentu" category="Ogólne" length="40" required="true" description="Numer składki." />
+    <col name="Data" type="date" category="Ogólne" description="Data naliczenia" />
+
+    <col name="Opis" type="text" description="Dodatkowy opis" caption="Dodatkowy opis" />
+    <!-- /OGÓLNE -->
+
+    <!-- KSIĘGOWE -->
+    <col name="Wartosc" type="currency" category="Księgowe"
+      description="Wartość naliczonej składki" />
+    <col name="DefinicjaEwidencji" type="DefinicjaDokumentu" name12="DefEwid" category="Księgowe" readonly="set"
+			description="Informacja o miejscu umieszczenia dokumentu w ewidencji księgowej (sposobie księgowania)." />
+    <!-- /KSIĘGOWE-->
+  </table>
+
+  <interface name="IZrodloHarmWplaty" />
+  <enum name="TypWplaty" />
+
+  <table name="HarmonogramWplat" tablename="HarmWplat" caption="Harmonogramy wpłat">
+
+    <col name="Zrodlo" type="IZrodloHarmWplaty" required="true" setonlynull="true" category="Ogólne"
+     children="HarmonogramyWplat"
+     relname="HarmonogramyWplat"
+     delete="cascade"
+     keyprimary="true"
+         >
+      
+      <keycol name="Data"/>
+      
+    </col>
+      
+    <col name="Data" type="date"  category="Ogólne" caption="Termin wpłaty" description="Termin wpłaty."/>
+    <col name="Typ" type="TypWplaty"  category="Ogólne"/>
+    <col name="Kwota" type="currency" category="Ogólne" description="Kwota wpłaty." />
+    <col name="Proporcja" type="double" category="Ogólne" />
+    <col name="Platnik" type="Kontrahent" category="Ogólne" caption="Płatnik"/>
+    
+  </table>
+
+
+  <table name="ModulSzkol" tablename="ModulySzkol" caption="Moduł" tablecaption="Moduły szkoleniowe.">
+
+    <key name="WgRodzajSzkolNazwa" keyprimary="true" keyunique="true">
+      <keycol name="RodzajSzkol" />
+      <keycol name="Nazwa" />
+    </key>
+
+    <key name="WgNazwa">
+      <keycol name="Nazwa"/>
+    </key>
+    
+    <col name="RodzajSzkol" type="RodzajSzkol"  children="Moduly" relname="Moduły w ramach szkolenia"/>
+    <col name="Nazwa" type="string" length="255" />
+  </table>
+
+
+
+  <table name="ZgloszenieUczGrupa" tablename="ZgloszeniaUczGrp" caption="Zgłoszenie na grupę" tablecaption="Zgłoszenia na grupę.">
+
+    <col name="ZgloszenieUczestnik" type="ZgloszenieUczestnik" required="true" keyprimary="true" setonlynull="true" children="ZgloszeniaUczGrupy" relname="ZgloszeniaModulowe" delete="cascade" />
+    <col name="GrupaSzkol" type="GrupaSzkol" children="ZgloszeniaGrupy" relname="ZgloszeniaGrupy" />
+    <col name="Modul" type="ModulSzkol" category="Ogólne" caption="Moduł" description="Moduł z którym powiązane jest szkolenie."/>
+    <col name="IndywidualnyKoszt" type="boolean" />
+    <col name="IndywidualnaCena" type="currency" />
+    <col name="IndywidualnyRabat" type="percent" />
+    
+  </table>
+
+  
+  <table name="TrybZajec" tablename="TrybyZajec" caption="Tryb zajęć" tablecaption="Tryby zajęć" config="true">
+    <key name="WgNazwa" keyprimary="true">
+      <keycol name="Nazwa"/>
+    </key>
+    <col name="Nazwa" type="string" length="80" caption="Nazwa trybu" />          
+    <col name="Blokada" type="boolean" caption="Blokada trybu"/>
+  </table>
+
+
+  <table name="ZajecieUczestnik" tablename="ZajeciaUcz" caption="Zgłoszenie na zajęcie" tablecaption="Zgłoszenia na zajęcia">
+    <col name="Zajecie" type="ZajecieSzkolBase" caption="Zajęcie" category="Ogólne" 
+         delete="cascade" required="true" keyprimary="true" keyunique="true"
+         children="Uczestnicy" relname="UczestnicyZajecia"
+         >
+      <keycol name="Uczestnik" />
+    </col>
+    <col name="Uczestnik" type="ZgloszenieUczestnik" caption="Uczestnik" category="Ogólne" delete="cascade" required="true" />
+    <col name="GrupaSzkol" type="GrupaSzkol" caption="Grupa szkoleniowa" category="Ogólne" delete="cascade" />
+  </table>
+  
+
+  <table name="SzkOsobaPodpis" tablename="SzkOsobyPodpisy" caption="Osoba podpisująca" guided="Root" config="true" >
+    <col name="Nazwisko" type="string" length="64" category="Ogólne" required="true" />
+    <col name="Imie" type="string" length="32" category="Ogólne">
+      <attribute>Dictionary("Imiona")</attribute>
+    </col>
+    <col name="Stanowisko" type="string" length="100" category="Ogólne" />
+    <col name="Aktywny" type="boolean" category="Ogólne" />
+    <col name="Oddzial" type="OddzialFirmy" required="true" category="Ogólne" relright="true"
+         caption="Oddział firmy" description="Oddział firmy." />
+  </table>
+  
+</module>

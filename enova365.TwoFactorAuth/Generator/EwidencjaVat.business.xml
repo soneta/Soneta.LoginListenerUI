@@ -1,0 +1,214 @@
+﻿<?xml version = "1.0" encoding = "utf-8" ?>
+
+<module xmlns="http://www.enova.pl/schema/business_struct.xsd" name="EwidencjaVat" namespace="Soneta.EwidencjaVat" versionName="enova">
+	<import>../..</import>
+	
+	
+	<using>Soneta.Core</using>
+	<using>Soneta.Config</using>
+	<using>Soneta.Kasa</using>
+
+
+	<enum name="TypEwidencjiVAT" />
+	<enum name="ZasadaRozliczaniaVAT" />
+	<enum name="RozliczenieMemorialoweVAT" />
+	<enum name="RozliczenieKasoweVAT" />
+	<enum name="WarunekRozliczeniaVAT" />
+	<enum name="TypTytułuObowiązkuVAT" />
+	<enum name="OdliczeniaVAT" />
+	<enum name="DzialalnoscGospodarcza" />
+	<enum name="RodzajZakupuVAT" />
+	<enum name="TypRozliczeniaVAT" />
+	<enum name="StatusRozliczeniaVAT" />
+
+
+	<subrow name="PowstanieObowiazkuVAT">
+		<col name="Zasada" name12="Zas" type="ZasadaRozliczaniaVAT" />
+		<col name="Memorialowe" name12="Mem" type="RozliczenieMemorialoweVAT" />
+		<col name="Kasowe" name12="Kas" type="RozliczenieKasoweVAT" />
+		<col name="Warunek" name12="War" type="WarunekRozliczeniaVAT" />
+		<col name="IloscDniWarunku" name12="IDW" type="int" />
+		<col name="WarunekPrawoOdliczenia" type="boolean" caption="Prawo odliczenia" description="Prawo odliczenia VAT, jeżeli rozliczony przez wypełnienie warunku" />
+	</subrow>
+
+
+	<table name="DefinicjaPowstaniaObowiazkuVAT" name8="DefPOVAT" tablename="DefinicjePOVAT" caption="Definicja powstania obowiązku VAT" tablecaption="Definicje powstania obowiązku VAT" guided="Root" config="true">
+		<key name="WgKodu" keyprimary="true" keyunique="true">
+			<keycol name="Typ" />
+			<keycol name="Kod" />
+		</key>
+		<col name="Typ" type="TypTytułuObowiązkuVAT" readonly="true" selector="true" />
+		<col name="Kod" type="string" length="32" required="true" category="Ogólne" />
+		<col name="PowstanieObowiazku" name12="PO" type="PowstanieObowiazkuVAT" category="Ogólne" />
+		<col name="Opis" type="string" length="80" category="Ogólne" />
+		<col name="Blokada" type="boolean" category="Ogólne" />
+	</table>
+
+	
+	<table name="NagEwidencjiVATAkcyzy" name8="NEwidVAT" tablename="NagEwidencjiVATT" tablecaption="Nagłóweki ewidencji VAT" caption="Nagłówek ewidencji VAT">
+		<key name="WgNumerDokumentu">
+			<keycol name="NumerDokumentu" />
+		</key>
+		<key name="WgNumer">
+			<keycol name="Numer" />
+		</key>
+		<key name="WgZasadyRozliczeniaVAT">
+			<keycol name="Typ" />
+			<keycol name="PowstanieObowiazku.Zasada" />
+			<keycol name="DoRozliczenia" />
+		</key>
+		<key name="WgTyp">
+			<keycol name="Typ" />
+			<keycol name="DataZaewidencjonowania" />
+		</key>
+		<col name="Ewidencja" type="DokEwidencji" readonly="true" required="true" children="NagEwidencjiVATAkcyzy" relname="Nagłówek ewidencji VAT/akcyzy dokumentu" keyprimary="true" relguided="inner" relright="true" category="Ogólne" description="Dokument ewidencji nagłówka">
+			<keycol name="Typ" />
+		</col>
+		<col name="Typ" type="TypEwidencjiVAT" readonly="true" required="true" selector="true" category="Ogólne" />
+		<col name="NumerDokumentu" type="string" length="40" required="true" category="Dokument" description="Numer dokumentu" />
+		<col name="Numer" type="string" length="40" required="true" category="Dokument" />
+		<col name="Definicja" type="DefinicjaDokumentu" required="true" category="Dokument">
+			<keycol name="DataZaewidencjonowania" />
+		</col>
+		<col name="Podmiot" type="IPodmiot" required="true" category="Dokument">
+			<keycol name="Typ" />
+			<keycol name="DataZaewidencjonowania" />
+		</col>
+		<col name="NrDokumentuK" type="string" length="40" category="Ogólne" description="Nr korygowanego dokumentu" />
+		<col name="DataZaewidencjonowania" name12="DataZaewid" required="true" type="date" category="Ewidencja VAT" />
+		<col name="RodzajPodmiotu" type="RodzajPodmiotu" category="Ewidencja VAT" />
+		<col name="StatusPodmiotu" type="StatusPodmiotu" category="Ewidencja VAT" />
+		<col name="Kraj" type="KrajTbl" readonly="set" required="true" />
+		<col name="Netto" type="currency" category="VAT" description="Wartość netto" />
+		<col name="VAT" type="currency" category="VAT" description="Wartość podatku VAT" />
+		<col name="Brutto" type="currency" category="VAT" description="Wartość brutto" />
+		<col name="DoRozliczenia" name12="DoRoz" type="boolean" category="Rozliczenie VAT" description="Określa, czy nagłówek ewidencji został już rozliczony." />
+		<col name="DefinicjaPowstaniaObowiazku" name12="DefPO" type="DefinicjaPowstaniaObowiazkuVAT" relname="Definicja Pow. Obow. nag. ewid. VAT" category="Rozliczenie VAT" description="Definicja momentu powstania obowiązku podatkowego VAT" />
+		<col name="PowstanieObowiazku" name12="PO" type="PowstanieObowiazkuVAT" category="Rozliczenie VAT" />
+		<col name="DataPowstania" type="date" category="Rozliczenie VAT" description="Data powstania obow. pod. VAT" />
+	</table>
+
+	
+	<table name="ElemEwidencjiVATAkcyzy" name8="EEwidVAT" tablename="EleEwidencjiVATT" tablecaption="Elementy ewidencji VAT" caption="Element ewidencji VAT">
+		<interface>IZrodloOpisuAnalitycznego</interface>
+		<key name="WgNumerDokumentu">
+			<keycol name="NumerDokumentu" />
+		</key>
+		<key name="WgNumer">
+			<keycol name="Numer" />
+		</key>
+		<key name="WgTyp">
+			<keycol name="Typ" />
+			<keycol name="DataZaewidencjonowania" />
+		</key>
+		<col name="Naglowek" type="NagEwidencjiVATAkcyzy" readonly="true" required="true" children="Elementy" relname="Elementy nagłówka ewidencji VAT" reldefault="true" relguided="inner" relright="true" keyclass="Lp" keyclasscol="Lp" keyprimary="true" delete="cascade" category="Ogólne" description="Nagłówek elementu ewidencji VAT" />
+		<col name="Typ" type="TypEwidencjiVAT" readonly="true" required="true" selector="true" category="Ogólne" />
+		<col name="Lp" type="int" modifier="public virtual" batchfield="false" category="Ogólne" description="Liczba porządkowa elementu w nagłówku" />
+		<col name="NumerDokumentu" type="string" length="40" required="true" category="Dokument" description="Numer dokumentu" />
+		<col name="Numer" type="string" length="40" required="true" category="Dokument" />
+		<col name="Definicja" type="DefinicjaDokumentu" required="true" category="Dokument">
+			<keycol name="DataZaewidencjonowania" />
+		</col>
+		<col name="Podmiot" type="IPodmiot" required="true" category="Dokument">
+			<keycol name="Typ" />
+			<keycol name="DataZaewidencjonowania" />
+		</col>
+		<col name="DataZaewidencjonowania" name12="DataZaewid" required="true" type="date" category="Ewidencja VAT" />
+		<col name="DefinicjaStawki" type="DefinicjaStawkiVat" relname="Elementy ewidencji VAT definicji stawki" reldefault="true" category="VAT" description="Definicja stawki VAT" modifier="public virtual" />
+		<col name="Stawka" type="StawkaVat" />
+		<col name="DefinicjaStawkiAkcyzy" type="DefinicjaStawkiAkcyzy" name12="DSA" relname="Elementy ewidencji akcyzy definicji stawki akcyzy" reldefault="true" category="Akcyza" modifier="public virtual" />
+		<col name="StawkaAkcyzy" type="StawkaAkcyzy" name12="StawkaA" />
+		<col name="Netto" type="currency" category="VAT" description="Wartość netto" />
+		<col name="VAT" type="currency" category="VAT" description="Wartość podatku" />
+		<col name="Brutto" type="currency" category="VAT" description="Wartość brutto" />
+		<col name="RodzajPodmiotu" type="RodzajPodmiotu" category="Podmiot" description="Rodzaj podmiotu" />
+		<col name="StatusPodmiotu" type="StatusPodmiotu" category="Podmiot" description="Status podmiotu" />
+		<col name="Odliczenia" type="OdliczeniaVAT" category="Parametry zakupu" description="Odliczenia VAT związane z tą pozycją" />
+		<col name="DzialalnoscGosp" type="DzialalnoscGospodarcza" caption="Działalność gosp" category="Parametry zakupu" description="Czy zakupy na cel działalności gospodarczej" />
+		<col name="Rodzaj" type="RodzajZakupuVAT" category="Parametry zakupu" description="Rodzaj zakupu związany z tą pozycją" />
+		<col name="PodlegaPSD" type="boolean" caption="Podlega PSD" category="Parametry sprzedaży" description="Podlega podatkowi od sprzedaży detalicznej" />
+		<col name="Kolumna" type="NrKolumnyKPiR" category="KPiR" description="Nr kolumany w KPiR" />
+		<col name="StrukturaSprzedazyNie" name12="SSNie" type="boolean" category="Inne" description="Nie uwzględniaj w liczeniu struktury sprzedaży" />
+		<col name="DefinicjaPowstaniaObowiazku" name12="DefPO" type="DefinicjaPowstaniaObowiazkuVAT" relname="Definicja Pow. Obow. elem. ewid. VAT" category="Rozliczenie VAT" description="Definicja momentu powstania obowiązku podatkowego VAT" />
+		<col name="PowstanieObowiazku" name12="PO" type="PowstanieObowiazkuVAT" category="Rozliczenie VAT" />
+		<col name="DataPowstania" type="date" category="Rozliczenie VAT" description="Data powstania obow. pod. VAT" />
+		<col name="OpisDodatkowy" type="string" length="255" category="Dokument" description="Dodatkowy opis elementu vat/akcyzy">
+			<attribute>Dictionary("OpisDodElemVAT")</attribute>
+		</col>
+	</table>
+
+
+	<table name="NagRozliczeniaVATAkcyzy" name8="NRozVat" tablename="NagRozliczenVATT" tablecaption="Nagłówki rozliczeń VAT" caption="Nagłówek rozliczenia VAT">
+		<key name="WgNumerEwidencji" keyprimary="true">
+			<keycol name="NumerEwidencji" />
+		</key>
+		<key name="WgNumerDokumentu">
+			<keycol name="NumerDokumentu" />
+		</key>
+		<key name="WgTypEwidencji">
+			<keycol name="TypEwidencji" />
+			<keycol name="Data" />
+		</key>
+		<col name="Naglowek" type="NagEwidencjiVATAkcyzy" readonly="true" required="true" children="NaglowkiRozliczeniaVAT" relname="Nagłówki rozliczeń VAT nagłówka ewidencji VAT" relguided="inner" category="Ewidencja VAT" description="Rozliczany nagłówek ewidencji VAT" />
+		<col name="TypEwidencji" type="TypEwidencjiVAT" readonly="true" required="true" category="Ewidencja VAT" description="Typ ewidencji VAT" />
+		<col name="NumerEwidencji" type="string" length="40" required="true" />
+		<col name="RozliczenieSP" name12="RozSP" type="RozliczenieSP" readonly="true" children="NaglowkiRozliczeniaVAT" relname="Nagłówki rozliczen VAT spowodowane rozliczeniem SP" category="Rozliczenie kasowe" description="Rozliczenie SP będące źrodłem rozliczania VAT" />
+		<col name="Platnosc" type="Platnosc" readonly="true" children="NaglowkiRozliczeniaVAT" relname="Nagłówki rozliczen VAT spowodowane rozliczeniami złe długi" category="Rozliczenie kasowe" description="Płatność będąca źrodłem rozliczania VAT złe długi" />
+		<col name="EwidencjaRozliczenia" name12="EwidRoz" type="DokEwidencji" readonly="true" children="NaglowkiRozliczaniaVAT" relname="Nagłówki rozliczenia VAT ewidencji rozliczeń kasowych VAT" category="Rozliczenie kasowe" description="Ewidencja rozliczeń kasowych" />
+		<col name="Typ" type="TypRozliczeniaVAT" readonly="true" required="true" selector="true" category="Ogólne" description="Typ rozliczenia VAT" />
+		<col name="StatusRozliczenia" type="StatusRozliczeniaVAT" readonly="true" category="Ogólne" description="Status rozliczenia VAT" />
+		<col name="Data" type="date" required="true" category="Ogólne" description="Data powstania obowiązku podatkowego VAT" />
+		<col name="Reczne" type="boolean" readonly="true" category="Ogólne" description="Określa czy rozliczenie zostało naliczone ręcznie" />
+		<col name="NumerDokumentu" type="string" length="40" readonly="true" required="true" />
+		<col name="Podmiot" type="IPodmiot" readonly="true" required="true">
+			<keycol name="TypEwidencji" />
+			<keycol name="Data" />
+		</col>
+		<col name="Definicja" type="DefinicjaDokumentu" readonly="true" required="true">
+			<keycol name="Data" />
+		</col>
+		<col name="Netto" type="currency" category="Ogólne" description="Wartość rozliczenia netto" />
+		<col name="VAT" type="currency" category="Ogólne" description="Wartość rozliczenia podatku VAT" />
+		<col name="Brutto" type="currency" category="Ogólne" description="Wartość rozlczenia brutto" />
+	</table>
+
+	
+	<table name="ElemRozliczeniaVATAkcyzy" name8="ERozVAT" tablename="EleRozliczenVATT" tablecaption="Elementy rozliczen VAT" caption="Element roczliczenia VAT">
+		<key name="WgNumerEwidencji">
+			<keycol name="NumerEwidencji" />
+		</key>
+		<key name="WgNumerDokumentu">
+			<keycol name="NumerDokumentu" />
+		</key>
+		<key name="WgTypEwidencji">
+			<keycol name="TypEwidencji" />
+			<keycol name="Data" />
+		</key>
+		<col name="Element" type="ElemEwidencjiVATAkcyzy" readonly="true" required="true" children="ElementyRozliczeniaVAT" relname="Rozliczenia elementu ewidencji VAT" category="Ewidencja VAT" description="Rozliczany element ewidencji VAT " />
+		<col name="TypEwidencji" type="TypEwidencjiVAT" readonly="true" required="true" selector="true" category="Ewidencja VAT" description="Typ ewidencji VAT" />
+		<col name="NumerEwidencji" type="string" length="40" required="true" />
+		<col name="Naglowek" type="NagRozliczeniaVATAkcyzy" readonly="true" required="true" children="Elementy" relname="Elementy nagłówka rozliczenia VAT" relguided="inner" keyclass="Lp" keyclasscol="Lp" keyprimary="true" category="Rozliczenia VAT" description="Nagłówek rozliczenia VAT" />
+		<col name="Lp" type="int" batchfield="false" category="Ogólne" description="Liczba porządkowa elementu w nagłówku" />
+		<col name="Data" type="date" required="true" category="Ogólne" description="Data powstania obowiązku podatkowego VAT" />
+		<col name="NumerDokumentu" type="string" length="40" required="true" readonly="true" />
+		<col name="Podmiot" type="IPodmiot" required="true" readonly="true">
+			<keycol name="TypEwidencji" />
+			<keycol name="Data" />
+		</col>
+		<col name="Definicja" type="DefinicjaDokumentu" required="true" readonly="true">
+			<keycol name="Data" />
+		</col>
+		<col name="Stawka" type="StawkaVat" />
+		<col name="StawkaAkcyzy" type="StawkaAkcyzy" name12="StawkaA" />
+		<col name="Netto" type="currency" category="Ogólne" description="Wartość rozliczenia netto" />
+		<col name="VAT" type="currency" category="Ogólne" description="Wartość rozliczenia podatku VAT" />
+		<col name="Brutto" type="currency" category="Ogólne" description="Wartość rozlczenia brutto" />
+		<col name="RodzajPodmiotu" type="RodzajPodmiotu" category="Podmiot" description="Rodzaj podmiotu" />
+		<col name="StatusPodmiotu" type="StatusPodmiotu" category="Podmiot" description="Status podmiotu" />
+		<col name="Odliczenia" type="OdliczeniaVAT" category="Parametry zakupu" description="Odliczenia VAT związane z tą pozycją" />
+		<col name="DzialalnoscGosp" type="DzialalnoscGospodarcza" caption="Działalność gosp"  category="Parametry zakupu" description="Czy zakupy na cel działalności gospodarczej" />
+		<col name="Rodzaj" type="RodzajZakupuVAT" category="Parametry zakupu" description="Rodzaj zakupu związany z tą pozycją" />
+		<col name="PodlegaPSD" type="boolean" caption="Podlega PSD" category="Parametry sprzedaży" description="Podlega podatkowi od sprzedaży detalicznej" />
+		<col name="StrukturaSprzedazyNie" name12="SSNie" type="boolean" category="Inne" description="Nie uwzględniaj w liczeniu struktury sprzedaży" />
+	</table>
+</module>

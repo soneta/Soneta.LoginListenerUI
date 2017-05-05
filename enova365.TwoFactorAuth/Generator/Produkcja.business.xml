@@ -1,0 +1,150 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<module xmlns="http://www.enova.pl/schema/business_struct.xsd" name="Produkcja" namespace="Soneta.Produkcja" versionName="enova">
+  <import>../..</import>
+  <using>Soneta.Core</using>
+	<using>Soneta.Config</using>
+  <using>Soneta.Handel</using>
+  <using>Soneta.Towary</using>
+  <using>Soneta.Magazyny</using>	  
+	<using>Soneta.CRM</using>
+
+  <interface name="IKosztTechnHost" />
+  <enum name="StanTechnologii" />
+  <enum name="RodzajPozycjiTechn" />
+  <enum name="RodzajIlosciPozycji" />
+  <enum name="RodzajWartosciKosztu" />
+  <enum name="TypCzasuOperacji" />
+  <enum name="RodzajCzasuOperacji" />
+  <enum name="KosztWytworzenia.AlgorytmPodzialu"/>
+  <enum name="SposobPlanowania"/>
+  <enum name="Aktywnosc"/>
+  
+  <table name="Technologia" tablename="Technologie" guided="Root" tablecaption="Technologie produkcyjne" caption="Technologia">
+    <interface>IKosztTechnHost</interface>
+    <key name="WgKod" keyprimary="true" keyunique="true">
+      <keycol name="Kod" />
+    </key>
+    
+    <col name="Kod" type="string" length="32" category="Ogólne" caption="Kod technologii" description="Kod technologii." required="true"  />
+    <col name="Nazwa" type="string" length="255" category="Ogólne" caption="Nazwa technologii" description="Pełna nazwa technologii." required="true" />
+    <col name="Opis" type="text" category="Ogólne" caption="Opis technologii" description="Opis technologii." />
+    <col name="Stan" type="StanTechnologii" category="Ogólne" caption="Stan technologii" description="Określa stan technologii (w buforze, zatwierdzona)."/>
+    <col name="Blokada" type="boolean" category="Ogólne" caption="Zablokowana" description="Określa zablokowanie technologii. Zablokowane technologie nie będą wyświetlane w liście wyboru."/>
+	  <col name="Zlecenie" type="DokumentHandlowy" category="Handel" 
+		   caption="Zlecenie produkcyjne." description="Zlecenie produkcyjne powiązane z kopią technologii wzorcowej."
+		   relguided="inner" relname="TechnologiaZlecenia" children="Technologie" keyunique="false"  relright="true" />
+    <col name="TechnologiaWzor" type="Technologia" category="Ogólne" caption="Technologia wzorcowa" description="Określa technologię wzorcową dla danej technologii."
+         setonlynull="true"
+         />
+    <col name="AlgorytmPodzialuKosztu" type="KosztWytworzenia.AlgorytmPodzialu" category="Ogólne"
+         description="Algorytm proporcjonalnego podziału kosztu na części przypadające na produkowane produkty." />
+
+    <col name="Sposob" type="SposobPlanowania" category="Planowanie" caption="Sposób planowania" description="Określa, sposób planowania technologii."/>
+    <col name="DataOd" type="date" category="Planowanie" caption="Data rozpoczęcia" />
+    <col name="CzasOd" type="time" category="Planowanie" caption="Czas rozpoczęcia" />
+  </table>
+
+  <table name="Operacja" tablename="Operacje" guided="Root" tablecaption="Operacja produkcyjna" caption="Operacja">
+    <interface>IKosztTechnHost</interface>
+    
+    <key name="WgTechnologiaKod" keyprimary="true" keyunique="true">
+      <keycol name="Technologia" />
+      <keycol name="Kod" />      
+    </key>
+
+    <key name="WgKod">
+      <keycol name="Kod" />
+    </key>
+
+    <key name="WgLp">
+      <keycol name="Lp"/>
+    </key>
+    
+    <col name="Kod" type="string" length="32" category="Ogólne"  caption="Kod operacji" required="true" />
+    <col name="Nazwa" type="string" length="255" category="Ogólne" caption="Nazwa operacji" required="true" />
+    <col name="Opis" type="text" category="Ogólne" caption="Opis operacji" />
+    <col name="Lp" type="int" required="true" batchfield="false" category="Ogólne" caption="Lp" description="Liczba porządkowa operacji w ramach technologii." />
+    
+    
+    <col name="Technologia" type="Technologia" category="Ogólne" caption="Technologia" description="Określa technologię przypisaną do operacji." 
+        children="Operacje" delete="cascade" keyclass="Lp" keyclasscol="Lp" 
+			  relguided="inner"
+			  relright="true"
+         />          
+    <col name="OperacjaWzor" type="Operacja" category="Ogólne" caption="Operacja wzorcowa" description="Określa operację wzorcową dla danej operacji."
+         setonlynull="true"
+         />
+    
+    <col name="Blokada" type="boolean" category="Ogólne" caption="Zablokowana" description="Określa zablokowanie operacji."/>
+    <col name="OperacjaPoprzednia" type="Operacja" category="Ogólne" caption="Operacja porzedzająca bieżącą" description="Operacja poprzedzająca bieżącą operację" />
+    <col name="Aktywnosc" type="Aktywnosc" category="Ogólne" caption="Aktywność" description="Sposób wyznaczanie aktywności dla operacji." />
+    <col name="CechaAktywnosc" type="FeatureDefinition" description="Definicja cechy algorytmicznej, służąca do wyliczenia aktywności." />
+  </table>
+
+  <table name="PozycjaTechn" tablename="PozycjeTechn" tablecaption="Pozycje technologii" caption="Pozycja technologii" guided="Root" >    
+    <col name="Technologia" type="Technologia" category="Ogólne" caption="Technologia" description="Określa technologię dla danej pozycji." 
+         children="PozycjeTechn" relright="true">
+      <keycol name="Rodzaj" />
+    </col>
+    <col name="Operacja" type="Operacja" category="Ogólne" caption="Operacja" description="Określa operację dla danej pozycji." 
+         keyprimary="true" delete="cascade" children="PozycjeTechn" relname="Pozycje technologiczne">
+      <keycol name="Rodzaj" />
+    </col>
+	  <col name="Towar" type="Towar" category="Ogólne" caption="Towar" description="Towar przypisany do pozycji."
+		   required="true">
+		  <keycol name="Rodzaj" />
+	  </col>
+    <col name="Magazyn" type="Magazyn" category="Ogólne"
+         description="Magazyn docelowy produktów lub źródłowy surowców." />
+    <col name="Rodzaj" type="RodzajPozycjiTechn" category="Ogólne" caption="Rodzaj pozycji." />
+    <col name="Ilosc" type="Amount" category="Ogólne" caption="Ilość"/>
+    <col name="IloscRzeczywista" type="Amount" category="Ogólne" caption="Ilość rzeczywista"/>
+    <col name="RodzajIlosci" type="RodzajIlosciPozycji" category="Ogólne" caption="Rodzaj ilości" description="Określa sposób wyznaczania ilości." />
+    <col name="KosztWytworzenia" type="currency" category="Ogólne" caption="Koszt wytworzenia" />
+    <col name="KosztWspolczynnik" type="int" category="Ogólne" 
+         caption="Współczynnik podziału kosztu" 
+         description="Współczynnik do algorytmu proporcjonalnego podziału kosztu na części przypadające na produkowane produkty."/>
+    <col name="CechaIlosc" type="FeatureDefinition" description="Definicja cechy algorytmicznej, służąca do wyliczenia ilości." />
+    <col name="Aktywnosc" type="Aktywnosc" category="Ogólne" caption="Aktywność" description="Sposób wyznaczanie aktywności dla pozycji." />
+    <col name="CechaAktywnosc" type="FeatureDefinition" description="Definicja cechy algorytmicznej, służąca do wyliczenia aktywności." />
+    <col name="Produkt" type="PozycjaTechn" description="Produkt do którego przypisany jest surowiec." />
+  </table>
+
+  <table name="KosztTechn" tablename="KosztyTechn" tablecaption="Koszty technologii" caption="Koszt technologii" guided="Root" >
+    <col name="Technologia" type="Technologia" category="Ogólne" caption="Technologia" description="Określa technologię dla danego kosztu pozycji." 
+         children="KosztyTechn" delete="cascade"  relright="true" />
+    <col name="Host" type="IKosztTechnHost" category="Ogólne" keyprimary="true" 
+         children="Koszty" delete="cascade" />
+    <col name="Towar" type="Towar" category="Ogólne" caption="Towar" description="Towar przypisany do pozycji."
+         required="true"
+         />
+    <col name="Wartosc" type="currency" category="Ogólne" caption="Wartość" />
+    <col name="RodzajWartosci" type="RodzajWartosciKosztu" category="Ogólne" caption="Rodzaj wartości" description="Określa sposób wyznaczania wartości." />
+    <col name="CechaWartosc" type="FeatureDefinition" description="Definicja cechy algorytmicznej, służąca do wyliczenia wartości." />
+    <col name="Aktywnosc" type="Aktywnosc" category="Ogólne" caption="Aktywność" description="Sposób wyznaczanie aktywności dla kosztu." />
+    <col name="CechaAktywnosc" type="FeatureDefinition" description="Definicja cechy algorytmicznej, służąca do wyliczenia aktywności." />
+
+    <col name="Produkt" type="PozycjaTechn" description="Produkt do którego przypisany jest surowiec." />
+  </table>
+
+  <table name="WzorcowyCzasOper" tablename="WzorcoweCzasOper" tablecaption="Wzorcowe czasy operacji" config="true">
+    <col name="Nazwa" type="string" length="64" keyprimary="true" />
+    <col name="Typ" type="TypCzasuOperacji" caption="Typ" description="Typ wzorcowego czasu operacji."/>
+    <col name="Rodzaj" type="RodzajCzasuOperacji" caption="Rodzaj czasu" description="Rodzaj czasu operacji." />
+    <col name="Jednostka" type="Jednostka" caption="Jednostka" description="Jednostka czasu." />
+    <col name="DodawanyDomyslnie" type="boolean" caption="Dodawanie domyślnie" />
+  </table>
+
+  <table name="CzasTechn" tablename="CzasyTechn" caption="Czas operacji" tablecaption="Czasy operacji" guided="Root">
+    <col name="Operacja" type="Operacja" category="Ogólne" caption="Operacja" description="Określa operację dla danego czasu." 
+         keyprimary="true" delete="cascade" children="CzasyTechn" relname="Czasy operacji" relright="true" />
+    <col name="Rodzaj" type="RodzajCzasuOperacji" category="Ogólne" caption="Rodzaj czasu." />
+    <col name="Typ" type="TypCzasuOperacji" caption="Typ" description="Typ wzorcowego czasu operacji."/>
+    <col name="Opis" type="text" category="Ogólne" caption="Opis" description="Opis czasu." />
+    <col name="Czas" type="Amount" category="Ogólne" caption="Czas"/>
+    <col name="CechaCzas" type="FeatureDefinition" description="Definicja cechy algorytmicznej, służąca do wyliczenia czasu." />
+    <col name="KosztJednostkowy" type="currency" category="Ogólne" caption="Koszt jednostkowy" />
+    <col name="JednostkaCzasuDlaKosztu" type="Jednostka" caption="Jednostka" description="Jednostka czasu dla kosztu jednostkowego."  />
+  </table>
+
+</module>

@@ -1,0 +1,259 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<module xmlns="http://www.enova.pl/schema/business_struct.xsd" name="Workflow" namespace="Soneta.Workflow" versionName="enova">
+  <import>..</import>
+
+  <using>Soneta.Business.App</using>
+  <using>Soneta.Business.Db</using>
+  <using>Soneta.Business.Db.Wizard</using>
+  <using>Soneta.Core</using>
+  <using>Soneta.Config</using>
+  <using>Soneta.Workflow.Config</using>
+  <using>Soneta.Workflow.Enums</using>
+
+  <!--Klasy konfiguracyjne...-->
+
+  <interface name="IDependentWfDefinitionParent"/>
+
+  <table name="WFDefinition" tablename="WFDefs" caption="Definicja workflow" tablecaption="Definicje workflow" guided="Root" config="true">
+
+    <interface>IRightsSource</interface>
+
+    <interface>IWFDefinition</interface>
+
+    <key name="WgSymbolu" keyunique="true" keyprimary="true">
+      <keycol name="Symbol" />
+    </key>
+
+    <key name="ByName">
+      <keycol name="Name"/>
+    </key>
+
+    <col name="Symbol" type="string" length="12" required="true" category="Ogólne" caption="Symbol" description="Skrótowa nazwa definicji" />
+    <col name="Name" type="string" length="255" required="true" category="Ogólne" caption="Nazwa" description="Nazwa definicji" />
+    <col name="Numerator" type="DefinicjaNumeracji" category="Ogólne" caption="Numeracja" description="Określa sposób numerowania definicji" />
+    <col name="Description" type="string" length="200" category="Ogólne" caption="Opis" description="Opis definicji"/>
+    <col name="SingleWorkflowInstance" type="boolean" category="Ogólne" caption="Pojedyncza instancja procesu" description="Określa czy definicja workflow pozwala na wiele instancji procesu"/>
+    <col name="EditType" type="EditTypeEnum" category="Ogólne" caption="Typ definicji" description="Określa typ definicji workflow"/>
+    <col name="Locked" type="boolean" category="Ogólne" caption="Definicja zablokowana" description="Określa czy definicja jest zablokowana"/>
+    <col name="Version" type="WFDefVersion" category="Wersja" caption="Wersja definicji procesu" description="Określa wersję definicji procesu" readonly="set"/>
+    <col name="PrevVersionGuid" type="guid" category="Ogólne" caption="Guid wersji definicji procesu" description="Określa Guid wersji definicji procesu (do jakiego szablonu należy)" readonly="set" />
+  </table>
+
+  <subrow name="WFDefVersion">
+    <col name="Major" type="int" category="Wersja" caption="Wersja główna" description="Określa wersję główną" readonly="set"/>
+    <col name="Minor" type="int" category="Wersja" caption="Wersja mała" description="Określa wersję małą" readonly="set"/>
+  </subrow>
+
+  <enum name="ActionTypeEnum" />
+  <enum name="EndTypeEnum" />
+  <enum name="EditTypeEnum" />
+
+  <table name="WFDefItem" tablename="WFDefItems" caption="Definicja elementu workflow" tablecaption="Definicja elementów workflow" guided="Root" config="true">
+
+    <interface>IWFDefItem</interface>
+
+    <key name="ByName" keyprimary="true" keyunique="true">
+      <keycol name="Name"/>
+    </key>
+
+    <key name="ByParentType">
+      <keycol name="ParentType"/>
+    </key>
+
+    <col name="Name" type="string" length="80" category="Ogólne" required="true" description="Nazwa definicji elementu workflow" caption="Nazwa" />
+    <col name="Description" type="text" category="Ogólne" caption="Opis" description="Opis definicji elementu workflow"/>
+    <col name="ParentType" type="string" length="100" category="Ogólne" caption="Typ obiektu elementu workflow" description="Określa typ obiektu elementu workflow" />
+    <col name="ActionType" type="ActionTypeEnum" category="Ogólne" description="Typ akcji" caption="Typ akcji" />
+    <col name="EndType" type="EndTypeEnum" category="Ogólne" caption="Typ elementu końcowego" description="Określa typ elementu końcowego definicja elementu workflow"/>
+
+    <col name="DefinitionWizard"
+         type="WizardDefinition"
+         category="Ogólne"
+         caption="Definicja kreatora"
+         description="Definicja kreatora powiązana z definicją elementu workflow"
+         relname="WFDefItems_DefinitionWizard"
+		/>
+
+    <col name="Wizard"
+         type="WizardDefinition"
+         category="Ogólne"
+         caption="Definicja kreatora inicjującego definicję zadania"
+         description="Definicja kreatora inicjującego definicję zadania powiązana z definicją elementu workflow"
+         relname="WFDefItems_Wizard"
+		/>
+
+    <col name="Code" type="text" category="Algorytm" caption="Kod algorytmu" description="Kod algorytmu kalkulatora definicji elementu workflow"/>
+    <col name="Icon" type="binary" category="Graf" modifier="internal" caption="Ikona" description="Binarna informacja o wyglądzie ikony."/>
+    <col name="UseDefaultIcon" type="boolean" category="Graf" caption="Domyślna ikona" description="Określa czy użyć domyślnej ikony."/>
+    <col name="IsStart" type="boolean" category="Ogólne" caption="Element startowy" description="Czy definicja zadania jest początkiem procesu workflow" />
+
+    <!--[15000][9.1][Workflow 9.1]: Pojedyncza instancja taska w procesie - task typu scalenie rozwidlenia-->
+    <col name="IsSingleInstance" type="boolean" category="Dodatkowe" caption="Złączenie" description="Określa czy kontrolka definiuje zadanie typu złączenie" />
+
+    <!--[15324][9.1][Workflow 9.1]: [Złączenie] Do WfDefItem dodać property Widoczne na liscie analogicznie jak na defTaska-->
+    <col name="IsVisibleInList" type="boolean" category="Dodatkowe" caption="Widoczność na liście" description="Określa czy definicja zadania typu Widoczny na liście" />
+
+  </table>
+
+  <table name="WFRecipient" tablename="WFRecipients" caption="Adresat kroku workflow" tablecaption="Adresaci kroku workflow" guided="Root" config="true">
+
+    <key name="ByTaskDefinitionAndTaskUser" keyprimary="true" keyunique="true">
+      <keycol name="TaskDefinition"/>
+      <keycol name="TaskUser"/>
+    </key>
+
+    <col name="TaskDefinition"
+         type="TaskDefinition"
+         required="true"
+         category="Ogólne"
+         caption="Definicja zadania"
+         description="Definicja zadania powiązana z adresatem kroku workflow"
+         relname="WFRecipients_TaskDefinition"
+		/>
+
+    <col name="TaskUser" type="ITaskUser" required="true" category="Ogólne" caption="Adresat zadania" description="Adresat zadania powiązany z krokiem workflow" />
+
+  </table>
+
+  <table name="WFTransitionDefinition" tablename="WFTransitionDefs" caption="Definicja elementu tranzycji" tablecaption="Definicja elementów tranzycji" guided="Root" config="true">
+
+    <key name="ByNameAndParentType" keyprimary="true" keyunique="true">
+      <keycol name="Name"/>
+      <keycol name="ParentType"/>
+    </key>
+
+    <col name="Name" type="string" length="80" required="true" category="Ogólne" description="Nazwa tranzycji" caption="Nazwa" />
+    <col name="ParentType" type="string" length="100" category="Ogólne" caption="Typ obiektu definicji elementu tranzycji" description="Określa typ obiektu definicji elementu tranzycji" />
+    <col name="Statement" type="text" category="Algorytm" caption="Kod algorytmu" description="Kod algorytmu kalkulatora realizacji zadania"/>
+
+    <!--[14942][9.1][Workflow 9.1]: Zmiana ergonomii wyboru ścieżki w Workflow-->
+    <col name="IsUserDecision" type="boolean" category="Dodatkowe" caption="Decyzja użytownika" description="Określa czy dalsze kroki zależne są od decycji użytkownika" />
+
+  </table>
+
+  <table name="WFTransition" tablename="WFTransitions" caption="Element tranzycji" tablecaption="Elementy tranzycji" guided="Root" config="true">
+
+    <interface>IWFTransition</interface>
+
+    <key name="ByNameAndSourceAndTarget" keyprimary="true" keyunique="true">
+      <keycol name="Name"/>
+      <keycol name="Source"/>
+      <keycol name="Target"/>
+    </key>
+
+    <key name="BySource">
+      <keycol name="Source"/>
+      <keycol name="Name"/>
+    </key>
+
+    <key name="ByTarget">
+      <keycol name="Target"/>
+      <keycol name="Name"/>
+    </key>
+
+    <col name="Name" type="string" length="80" required="true" category="Ogólne" description="Nazwa tranzycji" caption="Nazwa" />
+
+    <col name="Source"
+         type="TaskDefinition"
+         category="Ogólne"
+         caption="Definicja zadania (źródłowa)"
+         description="Definicja zadania powiązana z tranzycją (źródłowa)"
+         relname="WFTransition_TaskDefinition_Source"
+         children="WFTransitions_Source"
+		/>
+
+    <col name="Target"
+         type="TaskDefinition"
+         category="Ogólne"
+         caption="Definicja zadania (docelowa)"
+         description="Definicja zadania powiązana z tranzycją (docelowa)"
+         relname="WFTransition_TaskDefinition_Target"
+         children="WFTransitions_Target"
+		/>
+
+    <col name="WFTransitionDefinition"
+         type="WFTransitionDefinition"
+         category="Ogólne"
+         caption="Opcjonalna definicja elementu tranzycji"
+         description="Definicja elementu tranzycji powiązana z elementem tranzycji"
+         relname="WFTransition_WFTransitionDefinition"
+         children="WFTransitions"
+         delete="cascade"
+		/>
+
+    <col name="Statement" type="text" category="Algorytm" caption="Kod algorytmu" description="Kod algorytmu kalkulatora realizacji zadania"/>
+    <col name="XML" type="text" category="Graf workflow" caption="XML opisujący linię na grafie" description="XML opisujący linię na grafie workflow"/>
+
+    <!--[14942][9.1][Workflow 9.1]: Zmiana ergonomii wyboru ścieżki w Workflow-->
+    <col name="IsUserDecision" type="boolean" category="Dodatkowe" caption="Decyzja użytownika" description="Określa czy dalsze kroki zależne są od decycji użytkownika" />
+
+  </table>
+
+  <table name="OGSchema" tablename="OGSchemas" caption="Schemat generatora obiektów workflow" tablecaption="Schematy generatora obiektów workflow" guided="Root" config="true">
+
+    <interface>IOGSchema</interface>
+
+    <key name="ByName" keyprimary="true" keyunique="true">
+      <keycol name="Name"/>
+    </key>
+
+    <key name="BySourceTypeAndTargetType">
+      <keycol name="SourceType"/>
+      <keycol name="TargetType"/>
+    </key>
+
+    <col name="Name" type="string" length="80" required="true" category="Ogólne" description="Nazwa schematu generatora" caption="Nazwa" />
+    <col name="Description" type="string" length="200" category="Ogólne" caption="Opis" description="Opis schematu generatora"/>
+    <col name="SourceType" type="string" length="100" category="Ogólne" caption="Typ obiektu źródłowego" description="Określa typ obiektu źródłowego" />
+    <col name="TargetType" type="string" length="100" category="Ogólne" caption="Typ obiektu docelowego" description="Określa typ obiektu docelowego" required="true">
+      <verifier name="OGSchema.TargetTypeVerifier" onadded="true"/>
+    </col>
+    <col name="XML" type="text" category="Ogólne" caption="Definicja mapowania" description="Określa definicję mapowania pól obiektu źródłowego na obiekt docelowy (XML)"/>
+    <col name="Statement" type="text" category="Algorytm" caption="Kod algorytmu" description="Kod algorytmu kalkulatora inicjacji obiektu docelowego"/>
+    <col name="CtorDesc" type="string" length="1000" category="Ogólne" caption="Typ konstruktora obiektu docelowego" description="Określa opcjonalny typ konstruktora obiektu docelowego" />
+
+  </table>
+
+  <!--Klasy obiektów...-->
+
+  <table name="WFWorkflow" tablename="WFWorkflows" caption="Element workflow" tablecaption="Elementy workflow" guided="Root">
+
+    <interface>IWFWorkflow</interface>
+    <interface>IWFFeatureDefs</interface>
+
+    <key name="ByNameAndWorkflowDefinitionAndOperator" keyprimary="true">
+      <keycol name="Name"/>
+      <keycol name="WorkflowDefinition"/>
+      <keycol name="Operator"/>
+    </key>
+
+    <col name="Number" type="NumerDokumentu" category="Ogólne" description="Numer elementu workflow" caption="Numer" />
+    <col name="Name" type="string" length="255" required="true" category="Ogólne" description="Nazwa elementu workflow" caption="Nazwa" />
+
+    <col name="WorkflowDefinition"
+         type="WFDefinition"
+         category="Ogólne"
+         caption="Definicja workflow"
+         description="Definicja workflow powiązana z elementem workflow"
+         relname="WFWorkflow_WorkflowDefinition"
+         children="WFWorkflows"
+         readonly="true"
+		/>
+
+    <col name="Operator"
+         type="Operator"
+         category="Ogólne"
+         caption="Operator"
+         description="Operator powiązany z elementem workflow"
+         relname="Operatorzy"
+		/>
+
+    <col name="DateFrom" type="date" category="Ogólne" caption="Data rozpoczęcia" description="Data rozpoczęcia procesu" />
+    <col name="TimeFrom" type="timesec" category="Ogólne" caption="Godzina rozpoczęcia" description="Godzina rozpoczęcia procesu" />
+    <col name="DateTo" type="date" category="Ogólne" caption="Data zakończenia" description="Data zakończenia procesu" />
+    <col name="TimeTo" type="timesec" category="Ogólne" caption="Godzina zakończenia" description="Godzina zakończenia procesu" />
+    <col name="IsClosed" type="boolean" category="Ogólne" caption="Status procesu" description="Status procesu (zamknięty lub aktywny)" />
+
+  </table>
+
+</module>

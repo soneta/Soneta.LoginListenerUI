@@ -1,0 +1,373 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<module xmlns="http://www.enova.pl/schema/business_struct.xsd" name="Dms" namespace="Soneta.Workflow.Dms" versionName="enova">
+  <import>../..</import>
+
+  <using>Soneta.Business.App</using>
+  <using>Soneta.Ksiega</using>
+  <using>Soneta.Business.Db</using>
+  <using>Soneta.Business.Runtime</using>
+  <using>Soneta.Core</using>
+  <using>Soneta.Core.Ocr</using>
+  <using>Soneta.Workflow.Dms.Config</using>
+  <using>Soneta.Workflow.Enums</using>
+  <using>Soneta.Config</using>
+  <using>Soneta.CRM</using>
+
+  <table name="BasicDocumentDefinition" tablename="BasicDocDefs" caption="Definicja dokumentu podstawowego" tablecaption="Definicje dokumentów podstawowych" guided="Root" config="true">
+
+    <interface>IRightsSource</interface>
+
+    <key name="ByName" keyprimary="true" keyunique="true">
+      <keycol name="Name"/>
+    </key>
+
+    <col name="Name" type="string" length="100" required="true" important="true" category="Ogólne" caption="Nazwa" description="Nazwa definicji"/>
+    <col name="Symbol" type="string" length="15" required="true" category="Numeracja" caption="Symbol" description="Symbol definicji"/>
+    <col name="Series" type="boolean" category="Numeracja" caption="Seria" description="Seria definicji"/>
+    <col name="Numerator" type="DefinicjaNumeracji" category="Numeracja" caption="Numeracja" description="Określa sposób numerowania definicji"/>
+    <col name="Locked" type="boolean" category="Ogólne" caption="Zablokowana" description="Definicja zablokowana"/>
+    <col name="IsMetricsRequired" type="boolean" category="Dms" caption="Metryki wymagane" description="Metryki wymagane" modifier="protected"/>
+    <col name="Default" type="boolean" category="Ogólne" caption="Domyślna" description="Definicja domyślna"/>
+    <col name="IsArchCatRequired" type="boolean" category="Ogólne" caption="Wymagana kategoria archiwalna" description="Wymagana kategoria archiwalna"/>
+    <col name="Xml" type="text" category="Formularz" caption="Zakładka użytkownika" description="Definicja zakładki użytkownika"/>
+    <col name="AllowedRuntimeDefs" type="text" category="Ogólne" caption="Dozwolone definicje" description="Dozwolone definicje dokumentów dodatkowych"/>
+
+  </table>
+
+  <table name="Register" tablename="Registers" caption="Rejestr dokumentu podstawowego" tablecaption="Rejestry dokumentów podstawowych" guided="Root" cached="true" config="true">
+
+    <key name="ByName" keyprimary="true" keyunique="true">
+      <keycol name="Name"/>
+    </key>
+
+    <col name="Name" type="string" length="100" required="true" category="Ogólne" caption="Nazwa" description="Nazwa rejestru dokumentu podstawowego"/>
+    <col name="Symbol" type="string" length="15" required="true" category="Ogólne" caption="Symbol" description="Symbol rejestru dokumentu podstawowego">
+      <attribute>NumeratorItem</attribute>
+      <attribute>NumeratorInfo(NumeratorInfoType.symbol, "0000")</attribute>
+    </col>
+    <col name="IsMain" type="boolean" category="Ogólne" caption="Główny" description="Czy główny rejestr dokumentów podstawowych"/>
+    <col name="AllowedBasicDocDefs" type="text" category="Ogólne" caption="Dozwolone definicje" description="Dozwolone definicje dokumentów podstawowych"/>
+    
+  </table>
+
+  <enum name="AccessEnum"/>
+  <enum name="EditableFieldEnum"/>
+  <enum name="DublinCoreEnum"/>
+
+  <table name="BasicDocument" tablename="BasicDocs" caption="Dokument podstawowowy" tablecaption="Dokumenty podstawowe" guided="Root">
+
+    <interface>IPermissionClient</interface>
+
+    <key name="ByDate" keyprimary="true">
+      <keycol name="Date"/>
+    </key>
+
+    <col name="Definition"
+         type="BasicDocumentDefinition"
+         category="Ogólne"
+         caption="Definicja dokumentu podstawowego"
+         description="Definicja dokumentu podstawowego powiązana z dokumentem podstawowym"
+         relname="BasicDocument_BasicDocumentDefinition"
+         children="BasicDocuments"
+         readonly="true"
+         required="true"/>
+
+    <col name="Number" type="NumerDokumentu" category="Dokument" caption="Numer" description="Numer dokumentu"/>
+    <col name="Series" type="string" length="30" category="Dokument" caption="Seria" description="Seria dokumentu">
+      <attribute>Dictionary("Seria Dok.Podst.")</attribute>
+    </col>
+    <col name="Date" type="date" category="Daty" caption="Data" description="Data pisma" readonly="set"/>
+    <col name="DateOfDispatch" type="date" category="Daty" caption="Data nadania" description="Data nadania pisma"/>
+    <col name="DateOfReceipt" type="datetime" category="Daty" caption="Data wpływu" description="Data wpływu pisma" readonly="set"/>
+    <col name="RegistrationDatetime" type="datetime" category="Daty" caption="Data i czas rejestracji" description="Data i czas rejestracji pisma" readonly="set"/>
+    <col name="AddingDatetime" type="datetime" category="Daty" caption="Data i czas dodania do sprawy" description="Data i czas dodania pisma do sprawy" readonly="set"/>
+    <col name="DateOfDocument" type="date" category="Daty" caption="Data dokumentu" description="Ewidencyjna data dokumentu"/>
+    <col name="ArchiveCategory" type="ArchiveCategory" caption="Kategoria archiwalna" description="Kategoria archiwalna dokumentu" readonly="set"/>
+    <col name="ArchivedTerm" type="datetime" category="Archiwum" caption="Data i czas archiwizacji" description="Data i czas archiwizacji dokumentu" readonly="set"/>
+    <col name="DocumentNote" type="text" category="Ogólne" caption="Uwagi" description="Uwagi do dokumentu"/>
+    <col name="DocumentAccess" type="AccessEnum" category="Ogólne" caption="Dostęp" description="Dostęp do dokumentu">
+      <verifier name="BasicDocumentSystemUserGroupVerifier" onadded="true"/>
+    </col>
+    <col name="MethodOfTransfer" type="ElemSlownika" category="Ogólne" caption="Sposób przekazania" description="Sposób przekazania dokumentu"/>
+    <col name="ForeignSign" type="string" length="255" category="Inne" caption="Znak obcy" description="Znak obcy"/>
+
+    <col name="UnifiedRegisterClass"
+         type="UnifiedRegisterClass"
+         category="Kategoryzacja"
+         caption="Klasa wykazu akt"
+         description="Dokument podstawowy powiązany z klasą wykazu akt"
+         relname="BasicDocument_UnifiedRegisterClass"
+         children="BasicDocuments">
+      <attribute>NumeratorRef</attribute>
+    </col>
+
+    <col name="EditableField" type="EditableFieldEnum" category="Inne" caption="Pole edytowane" description="Które pole jest edytowane (podmiot lub osoba)"/>
+    <col name="BusinessEntity" type="IPodmiot" category="Inne" caption="Podmiot" description="Podmiot związany z dokumentem podstawowym"/>
+    <col name="Person" type="KontaktOsoba" category="Inne" caption="Osoba" description="Osoba związany z dokumentem podstawowym"/>
+    <col name="Email" type="string" length="255" category="Ogólne" caption="E-mail" description="E-mail"/>
+    <col name="Responsible" type="Operator" category="Ogólne" caption="Odpowiedzialny" description="Odpowiedzialny za dokument"/>
+    <col name="DcType" type="DublinCoreEnum" category="Załączniki" caption="Typ opisu" description="Typ opisu DublinCore"/>
+    <col name="SubstantiveCell" type="ElementStrukturyOrganizacyjnej" category="Ogólne" caption="Komórka merytoryczna" description="Komórka merytoryczna">
+      <attribute>NumeratorRef</attribute>
+    </col>
+
+    <col name="Matter"
+         type="Matter"
+         category="Sprawa"
+         caption="Sprawa"
+         description="Dokument podstawowy powiązany ze sprawą"
+         relname="BasicDocument_Matters"
+         children="BasicDocuments"/>
+
+    <col name="Register"
+         type="Register"
+         category="Ogólne"
+         caption="Rejestr dokumentu podstawowego"
+         description="Rejestr dokumentu podstawowego powiązany z dokumentem podstawowym"
+         relname="BasicDocument_Register"
+         children="BasicDocuments"
+         required="true">
+      <attribute>NumeratorRef</attribute>
+    </col>
+
+  </table>
+
+  <subrow name="ArchiveCategory">
+
+    <col name="Symbol" type="ElemSlownika" category="Archiwum" caption="Symbol" description="Symbol kategorii archiwalnej dokumentu">
+      <verifier name="ArchiveCategory.SymbolRequiredVerifier" onadded="true"/>
+    </col>
+    <col name="Period" type="int" category="Archiwum" caption="Okres" description="Opcjonalny okres kategorii archiwalnej dokumentu"/>
+
+  </subrow>
+
+  <table name="UnifiedRegister" tablename="UnifiedRgs" caption="Wykaz akt" tablecaption="Wykazy akt" config="true" guided="Root">
+
+    <key name="ByName" keyprimary="true" keyunique="true">
+      <keycol name="Name"/>
+    </key>
+
+    <col name="Name" type="string" length="100" required="true" important="true" category="Ogólne" caption="Nazwa" description="Nazwa wykazu akt"/>
+    <col name="Symbol" type="string" length="15" required="true" important="true" category="Ogólne" caption="Symbol" description="Symbol wykazu akt"/>
+
+  </table>
+
+  <table name="UnifiedRegisterClass" tablename="UnifiedRgClasses" caption="Klasa wykazu akt" tablecaption="Klasy wykazów akt" config="true" guided="Root">
+
+    <key name="BySymbol" keyprimary="true" keyunique="true">
+      <keycol name="Symbol"/>
+    </key>
+
+    <col name="Locked" type="boolean" category="Ogólne" caption="Zablokowane" description="Klasa wykazu akt zablokowana"/>
+    <col name="Symbol" type="string" length="6" category="Ogólne" caption="Symbol" description="Symbol klasy wykazu akt">
+      <attribute>NumeratorItem</attribute>
+      <attribute>NumeratorInfo(NumeratorInfoType.symbol, "0")</attribute>
+    </col>
+    <col name="Name" type="string" length="255" category="Ogólne" caption="Nazwa" description="Nazwa klasy wykazu akt"/>
+    <col name="Description" type="text" category="Ogólne" caption="Opis" description="Opis klasy wykazu akt"/>
+    <col name="ArchiveCategory" type="ArchiveCategory" caption="Kategoria archiwalna" description="Kategoria archiwalna klasy wykazu akt" readonly="set"/>
+
+    <col name="Parent"
+         type="UnifiedRegisterClass"
+         category="Ogólne"
+         caption="Klasa nadrzędna"
+         description="Nadrzędna klasa wykazu akt"
+         lock="ExclusiveGet"
+         children="ChildUnifiedRegisterClass"
+         relname="UnifiedRegisterClassRelation"
+         delete="cascade"/>
+
+    <col name="UnifiedRegister"
+         type="UnifiedRegister"
+         category="Ogólne"
+         caption="Wykaz akt"
+         description="Wykaz akt powiązany z klasą wykazu akt"
+         relname="UnifiedRegisterClass_UnifiedRegister"
+         children="UnifiedRegisterClasses"
+         readonly="true"
+         required="true"/>
+
+  </table>
+
+  <table name="MatterDefinition" tablename="MatterDefs" caption="Definicja sprawy" tablecaption="Definicje spraw" guided="Root" config="true">
+
+    <interface>IRightsSource</interface>
+
+    <key name="ByName" keyprimary="true" keyunique="true">
+      <keycol name="Name"/>
+    </key>
+
+    <col name="Name" type="string" length="100" required="true" important="true" category="Ogólne" caption="Nazwa" description="Nazwa definicji"/>
+    <col name="Symbol" type="string" length="15" required="true" category="Numeracja" caption="Symbol" description="Symbol definicji"/>
+    <col name="Series" type="boolean" category="Numeracja" caption="Seria" description="Seria definicji"/>
+    <col name="Numerator" type="DefinicjaNumeracji" category="Numeracja" caption="Numeracja" description="Określa sposób numerowania definicji"/>
+    <col name="Locked" type="boolean" category="Ogólne" caption="Zablokowana" description="Definicja zablokowana"/>
+    <col name="IsMetricsRequired" type="boolean" category="Dms" caption="Metryki wymagane" description="Metryki wymagane" modifier="protected"/>
+
+  </table>
+
+  <table name="Matter" tablename="Matters" caption="Sprawa" tablecaption="Sprawy" guided="Root">
+
+    <interface>IPermissionClient</interface>
+
+    <key name="ByDate" keyprimary="true">
+      <keycol name="RegistrationDatetime"/>
+    </key>
+
+    <col name="Definition"
+         type="MatterDefinition"
+         category="Ogólne"
+         caption="Definicja sprawy"
+         description="Definicja sprawy powiązana ze sprawą"
+         relname="Matter_MatterDefinition"
+         children="Matters"
+         readonly="true"
+         required="true"/>
+
+    <col name="Number" type="NumerDokumentu" category="Dokument" caption="Numer" description="Numer sprawy"/>
+    <col name="Series" type="string" length="30" category="Dokument" caption="Seria" description="Seria sprawy">
+      <attribute>Dictionary("Seria sprawy")</attribute>
+    </col>
+    <col name="Creator" type="Operator" category="Ogólne" caption="Założył" description="Operator, który założył sprawę" readonly="set"/>
+    <col name="Leader" type="Operator" category="Ogólne" caption="Prowadzący" description="Prowadzący sprawę"/>
+    <col name="DcType" type="DublinCoreEnum" category="Załączniki" caption="Typ opisu" description="Typ opisu DublinCore"/>
+    <col name="SubstantiveCell" type="ElementStrukturyOrganizacyjnej" category="Ogólne" caption="Komórka merytoryczna" description="Komórka merytoryczna">
+      <attribute>NumeratorRef</attribute>
+    </col>
+    <col name="RegistrationDatetime" type="datetime" category="Daty" caption="Data i czas rejestracji" description="Data i czas rejestracji sprawy" readonly="set"/>
+    <col name="LastBasicDocDatetime" type="datetime" category="Daty" caption="Data i czas dodania dokumentu" description="Data i czas dodania ostatniego dokumentu podstawowego" readonly="set"/>
+    <col name="CloseDatetime" type="datetime" category="Daty" caption="Data i czas zakończenia" description="Data i czas zakończenia sprawy" readonly="set"/>
+    <col name="ArchivedTerm" type="datetime" category="Archiwum" caption="Data i czas archiwizacji" description="Data i czas archiwizacji sprawy" readonly="set"/>
+    <col name="MatterAccess" type="AccessEnum" category="Ogólne" caption="Dostęp" description="Dostęp do sprawy">
+      <verifier name="MatterSystemUserGroupVerifier" onadded="true"/>
+    </col>
+
+    <col name="Parent"
+         type="Matter"
+         category="Ogólne"
+         caption="Sprawa nadrzędna"
+         description="Nadrzędna sprawa"
+         lock="ExclusiveGet"
+         children="ChildMatters"
+         relname="MatterRelation"
+         delete="cascade"/>
+
+    <col name="UnifiedRegisterClass"
+         type="UnifiedRegisterClass"
+         category="Kategoryzacja"
+         caption="Klasa wykazu akt"
+         description="Sprawa powiązana z klasą wykazu akt"
+         relname="Matter_UnifiedRegisterClass"
+         children="Matters">
+      <attribute>NumeratorRef</attribute>
+    </col>
+
+    <col name="Title" type="string" length="255" category="Ogólne" caption="Tytuł" description="Tytuł sprawy"/>
+    <col name="Description" type="text" category="Ogólne" caption="Opis" description="Opis sprawy"/>
+    <col name="Format" type="string" length="255" category="Ogólne" caption="Format" description="Format sprawy" >
+      <attribute>Dictionary("Format sprawy")</attribute>
+    </col>
+
+  </table>
+
+  <table name="OcrBusinessMapping" tablename="OcrBusMappings" caption="Format mapowania OCR"
+         tablecaption="Formaty mapowania OCR" guided="Root" cached="true" config="true">
+
+    <key name="ByName" keyprimary="true" keyunique="true">
+      <keycol name="Name"/>
+    </key>
+
+    <col name="Name" type="string" length="255" required="true" category="Ogólne" caption="Nazwa" description="Nazwa formatu mapowania OCR"/>
+
+    <col name="XmlDefinition"
+         type="DefXmlNag"
+         category="Ogólne"
+         caption="Definicja komunikatu"
+         description="Definicja komunikatu powiązana z formatem mapowania OCR"
+         relname="OcrBusinessMapping_DefXmlNag"
+         children="OcrBusMappings"
+         readonly="true"
+         required="true"/>
+
+  </table>
+
+  <table name="OcrBusinessMappingOutput" tablename="OcrBusMapOutputs" caption="Wynik mapowania OCR" tablecaption="Wyniki mapowania OCR">
+
+    <key name="ByOcrBusinessMappingAndAttachment" keyprimary="true">
+      <keycol name="OcrBusinessMapping"/>
+      <keycol name="Attachment"/>
+    </key>
+
+    <col name="OcrBusinessMapping"
+         type="OcrBusinessMapping"
+         category="Ogólne"
+         caption="Format mapowania OCR"
+         description="Format mapowania OCR powiązany z wynikiem mapowania OCR"
+         relname="OcrBusinessMappingOutput_OcrBusinessMapping"
+         children="OcrBusinessMappingOutputs"
+         delete="cascade"
+         readonly="true"
+         required="true"/>
+
+    <col name="Attachment"
+         type="Attachment"
+         category="Ogólne"
+         caption="Załącznik"
+         description="Załącznik powiązany z wynikiem mapowania OCR"
+         relname="OcrBusinessMappingOutput_Attachment"
+         children="OcrBusinessMappingOutputs"
+         delete="cascade"
+         readonly="true"
+         required="true"/>
+
+    <col name="XmlOcrOutput" type="text" category="Ogólne" caption="Wynik" description="Wynik mapowania OCR"/>
+
+  </table>
+
+  <enum name="OcrPage"/>
+
+  <table name="OcrBusinessMappingElement" tablename="OcrBusMapElems" caption="Pozycja formatu mapowania OCR"
+         tablecaption="Pozycje formatu mapowania OCR" guided="Root" cached="true" config="true">
+
+    <key name="ByOcrBusinessMappingAndXmlElementDefinition" keyprimary="true" keyunique="true">
+      <keycol name="Name"/>
+      <keycol name="OcrBusinessMapping"/>
+      <keycol name="XmlElementDefinition"/>
+    </key>
+
+    <col name="OcrBusinessMapping"
+         type="OcrBusinessMapping"
+         category="Ogólne"
+         caption="Format mapowania OCR"
+         description="Format mapowania OCR powiązany z pozycją formatu mapowania OCR"
+         relname="OcrBusinessMappingElement_OcrBusinessMapping"
+         children="OcrBusinessMappingElements"
+         delete="cascade"
+         readonly="true"
+         required="true"/>
+
+    <col name="XmlElementDefinition"
+        type="DefXmlElem"
+        category="Ogólne"
+        caption="Definicja elementu komunikatu"
+        description="Definicja elementu komunikatu powiązana z pozycją formatu mapowania OCR"
+        relname="OcrBusinessMappingElement_DefXmlElem"
+        children="OcrBusinessMappingElements"
+        delete="cascade"/>
+
+    <col name="Name" type="string" length="255" required="true" important="true" category="Ogólne" caption="Nazwa" description="Nazwa pozycji">
+      <verifier name="OcrBusinessMappingElement.OcrBusinessMappingElementNameVerifier" onadded="true"/>
+    </col>
+    <col name="X" type="int" category="Region" caption="Współrzędna X" description="Współrzędna X lewego górnego narożnika regionu"/>
+    <col name="Y" type="int" category="Region" caption="Współrzędna Y" description="Współrzędna Y lewego górnego narożnika regionu"/>
+    <col name="Width" type="int" category="Region" caption="Szerokość" description="Szerokość regionu"/>
+    <col name="Height" type="int" category="Region" caption="Wysokość" description="Wysokość regionu"/>
+    <col name="Page" type="OcrPage" category="Region" caption="Strona" description="Strona na której należy weryfikować region"/>
+    <col name="RegexExpression" type="string" length="255" category="Ogólne" caption="Wyrażenie regularne" description="Wyrażenie regularne pozwalające mapować"/>
+    <col name="StringExpression" type="string" length="255" category="Ogólne" caption="Wyrażenie tekstowe" description="Wyrażenie tekstowe pozwalające mapować"/>
+    <col name="IsFormatMatchExpression" type="boolean" category="Ogólne" caption="Pole specjalne" description="Pole specjalne"/>
+    <col name="Code" type="text" category="Algorytm" caption="Kod algorytmu" description="Kod algorytmu kalkulatora pozycji formato mapowania OCR"/>
+
+  </table>
+
+</module>

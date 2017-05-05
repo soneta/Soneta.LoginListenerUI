@@ -1,0 +1,2008 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<module xmlns="http://www.enova.pl/schema/business_struct.xsd" name="Handel" namespace="Soneta.Handel" versionName="enova" >
+
+	<import>../..</import>
+
+	<using>Soneta.Business.App</using>
+	<using>Soneta.Core</using>
+	<using>Soneta.Commands</using>
+	<using>Soneta.Config</using>
+	<using>Soneta.CRM</using>
+	<using>Soneta.Handel.Dostawy</using>
+  <using>Soneta.Handel.EDI</using>
+	<using>Soneta.Handel.RelacjeDokumentow</using>
+	<using>Soneta.Kadry</using>
+	<using>Soneta.Kasa</using>
+	<using>Soneta.Magazyny</using>
+	<using>Soneta.Magazyny.Dostawy</using>
+	<using>Soneta.Produkcja</using>
+	<using>Soneta.Towary</using>
+	<using>Soneta.Waluty</using>
+	<using>Soneta.Fiskal</using>
+
+  <table name="DefDokPodrzednego" tablename="DefDokPodrzedne" name8="DefDokPo" namespace="Soneta.Handel.RelacjeDokumentow"
+         config="true">
+    <key name="WgDefinicjaPodrzedna" keyprimary="true" keyunique="true">
+      <keycol name="Definicja"/>
+      <keycol name="Podrzedna"/>
+    </key>
+
+    <col name="Index" type="int" modifier="public" required="false" />
+
+    <col name="Nadrzedna" type="DefDokHandlowego"
+         required="true" readonly="true"
+         children="PodrzedneDefinicje" relname="Definicje podrzędne względem nadrzędnej definicji dokumentu">
+      <keycol name="Index"/>
+    </col>
+         
+    <col name="Definicja" type="DefRelacjiHandlowej"
+         required="true" readonly="true"
+         children="PodrzedneDefinicje" relguided="inner" relname="Definicje podrzędne względem definicji relacji handlowej"
+         delete="cascade">
+      <keycol name="Index"/>
+    </col>
+
+    <col name="Podrzedna" type="DefDokHandlowego" modifier="public virtual"
+         required="true"
+         children="NadrzedneDefinicje" relname="Definicje nadrzędne względem podrzędnej definicji dokumentu">
+      <keycol name="Index"/>
+    </col>
+
+  </table>
+
+  <subrow name="Realizacja">
+    <col name="Stan" type="StanRealizacji" caption="Stan realizacji" />
+    <col name="Wynik" type="WynikRealizacji" caption="Wynik realizacji" readonly="set" />
+  </subrow>
+
+	<subrow name="DokumentKoncowyInfo">
+		<col name="DokumentKoncowy"	type="boolean"
+				 caption="Dokument końcowy"
+				 description="Wskazuje na to, czy dokument ma być traktowany jako końcowy dokument w relacjach do innych dokumentów nadrzędnych." />
+	</subrow>
+
+	<table name="LimitWartosci" tablename="LimityWartosci" name8="LmtWrtsc"
+				 caption="Limit wartości dokumentu" tablecaption="Limity wartości dokumentu.">
+		<col name="Definicja" type="DefDokHandlowego"
+				 required="true" keyprimary="true" keyunique="true" setonlynull="true"
+				 children="LimityWartosci" relguided="inner" relname="Limity wartości dla tej definicji dokumentu handlowego"
+				 caption="Definicja"
+				 description="Limity wartości dotyczą wybranej definicji dokumentu handlowego.">
+			<attribute>Context</attribute>
+      <keycol name="Typ"/>
+			<keycol name="Waluta"/>
+		</col>
+    <col name="Waluta" type="Waluta"
+				 required="true" keyprimary="false" keyunique="false" readonly="set"
+				 caption="Waluta"
+				 description="Waluta limitu wartości.">
+			<attribute>Browsable(false)</attribute>
+		</col>
+		<col name="Wartosc" type="currency" modifier="public virtual"
+				 caption="Wartość"
+				 description="Wartość limitu w walucie."/>
+    <col name="Typ" type="LimitWartosciTyp"
+         selector="true" required="true" readonly="true"
+         caption="Typ"
+         description="Typ limitu wartości.">
+      <attribute>Browsable(false)</attribute>
+    </col>
+	</table>
+
+	<subrow name="LimitWartosciInfo">
+		<col name="ReakcjaZatwierdzanie" type="LimitWartosciReakcjaZatwierdzanie" modifier="public virtual"
+				 caption="Zatwierdzanie"
+				 description="Wskazuje na to, czy zatwierdzanie jest dozwolone wtedy, kiedy limit wartości został przekroczony." />
+	</subrow>
+
+	<table name="RelacjaGrupyDostaw" tablename="RelacjeGrupDostw" name8="GrpDstwR" namespace="Soneta.Handel.Dostawy"
+		   caption="Relacja do partii" tablecaption="Relacje do partii">
+		<col name="Pozycja" type="PozycjaDokHandlowego"
+			 required="true" readonly="set" keyprimary="true"
+             children="RelacjePartii" relname="Powiązanie z pozycją." delete="cascade"
+			 caption="Pozycja"
+			 description="Pozycja dostawy towaru."/>
+		<col name="Kierunek" type="KierunekPartii"
+			 required="true" readonly="set"
+			 caption="Kierunek partii"
+			 description="Kierunek partii. Przychód - zakup partii. Rozchód - wydanie partii ze wskazaniem pozycji.">
+			<attribute>Browsable(false)</attribute>
+		</col>
+		<col name="Partia" type="GrupaDostaw" modifier="public virtual"
+			 required="true"
+             children="RelacjePartii" relname="Powiązanie z grupą dostaw."
+			 caption="Partia"
+			 description="Partia towaru.">
+			<keycol name="Kierunek"/>
+			<keycol name="Kopia"/>
+		</col>
+		<col name="Kopia" type="boolean" modifier="public" readonly="set"
+			 caption="Kopia"
+			 description="Flaga oznacza, że relacja jest kopią innej relacji. Nie blokuje możliwości edycji.">
+			<attribute>Browsable(false)</attribute>
+		</col>
+		<col name="Ilosc" type="Quantity" modifier="public"
+			 caption="Pobrano ilość"
+			 description="Ilość wskazana do pobrania przez pozycję wydania." />
+	</table>
+
+	<table name="DefDokHandlowego" tablename="DefDokHandlowych" name8="DefDkHan" guided="Root" config="true"
+		caption="Definicja dokumentu handlowego"
+		tablecaption="Definicje dokumentów handlowych">
+
+		<interface>IRightsSource</interface>
+		<interface>IDefinicjaKomunikatuEDIHost</interface>
+
+		<key name="WgSymbolu" keyunique="true" keyprimary="true">
+			<keycol name="Symbol" />
+		</key>
+		<key name="WgNazwy" keyunique="true">
+			<keycol name="Nazwa" />
+		</key>
+		<key name="WgKategorii" keyunique="true">
+			<keycol name="Kategoria" />
+			<keycol name="Symbol" />
+		</key>
+
+		<col name="Bazowa" type="guid" category="Ogólne" modifier="internal"
+			description="GUID bazowej definicji, na podstawie której zrobiona jest aktualna definicja." />
+		<col name="Symbol" type="string" length="12" required="true" category="Ogólne" important="true"
+			description="Skrótowa nazwa definicji dokumentu wykorzystywana do wyszukiwania definicji oraz numeracji dokumentów handlowych." />
+		<col name="DrugiSymbol" type="string" length="12" category="Ogólne"
+			description="Drugi symbol dokumentu wykorzystywany do alternatywnej numeracji dokumentów handlowych.">
+			<attribute>NumeratorItem</attribute>
+			<attribute>NumeratorInfo(NumeratorInfoType.str, "SYM")</attribute>
+		</col>
+		<col name="Nazwa" type="string" length="30" required="true" category="Ogólne" important="true"
+			description="Pełna nazwa definicji dokumentu wykorzystywana do wyszukiwania deifnicji." />
+		<col name="Blokada" type="boolean" category="Ogólne"
+			description="Określa zablokowanie definicji. Zablokowane definicje dokumentów nie będą wyświetlane w liście wyboru." />
+
+		<!-- WYDRUKI -->
+		<col name="TytulWydruku" type="string" length="30" category="Wydruk"
+			 description="Tytuł umieszczany na wydruku w nagłówku dokumentu." />
+		<col name="TytulWydruku2" type="string" length="30" category="Wydruk"
+			 description="Tytuł w języku obcym umieszczany na wydruku w nagłówku dokumentu." />
+		<col name="RodzajWydruku" type="RodzajWydruku" category="Wydruk"
+				 description="Rodzaj wydruku (pełny lub uproszczony)." />
+		<col name="OpisWydruku" type="text" category="Wydruk"
+			 description="Opis umieszczany na wydruku dokumentu." />
+		<!-- TASK: 2525. [4.3] -->
+		<col name="PokazParametryWydruku" type="ParametryWydrukuMonit" category="Drukowanie"
+			 description="Określa, czy okno z parametrami wydruku dla wydruku domyślnego będzie wyświetlane."/>
+		<!-- TASK: 2525. [4.3] -->
+		<col name="IloscKopii" type="int" category="Drukowanie" length="1"
+			 description="Określa drukowaną ilość kopii dokumentu."/>
+		<col name="DrukowanieZawszeOryginal" type="boolean" category="Drukowanie"
+			 description="Okno parametrów wydruku domyślnie do wydruku będzie podpowiadać oryginał." />
+		<!-- TASK: 2525. [4.3] -->
+		<col name="DrukowanieNumerowNadrzednych" type="boolean" category="Drukowanie"
+			 description="Określa, czy numery dokumentów nadrzędnych będą drukowane." />
+		<!-- TASK: 7071 [7.4] -->
+		<col name="DrukowanieNumerowNadrzednychTylkoNajblizsze" type="boolean" category="Drukowanie"
+			 description="Drukowane będą tylko numery dokumentów bezpośrednio w relacji" />
+    <!-- TASK: 13788 [9.2] -->
+    <col name="DrukowanieNumerowPodrzednychTylkoNajblizsze" type="boolean" category="Drukowanie"
+			 description="Drukowane będą tylko numery dokumentów bezpośrednio w relacji" />
+    <!-- TASK: 2525. [4.3] -->
+		<col name="DrukowanieNumerowPodrzednych" type="boolean" category="Drukowanie"
+			 description="Określa, czy numery dokumentów nadrzędnych będą drukowane." />
+		<col name="DrukowanieZestawieniaMagazynowych" type="boolean" category="Drukowanie" description="Drukowane będą informacje o dokumentach magazynowych nadrzędnych." />
+		<!-- TASK: 2526. [4.3] -->
+		<col name="InformacjeKRS" type="boolean" category="Drukowanie"
+			 description="Określa, czy drukować informacje z KRS." />
+		<!-- TASK: 3364. [5.2] -->
+		<col name="DrukowanieCenyIRabatu" type="boolean" category="Drukowanie"
+			 description="Określa, czy drukować cenę przed rabatem i rabat procentowy." />
+		<!-- TASK: 6208. [7.0] -->
+		<col name="DrukujDrugiRachunek" type="boolean" category="Drukowanie"
+			 description="Określa czy drukować drugi rachunek." />
+		<col name="DrukujTylkoRoznicePrzedKorekta" type="boolean" category="Drukowanie" modifier="public virtual"
+			 description="Określa czy drukować tylko pozycje korygowane (zmienione)" />
+		<col name="DrukujTylkoRoznicePoKorekcie" type="boolean" category="Drukowanie" modifier="public virtual"
+			 description="Określa czy drukować tylko pozycje korygowane (zmienione)" />
+		<!-- TASK: 7154 [7.5] -->
+		<col name="DrukujSWIFTZawsze" type="boolean" category="Drukowanie"
+			 description="Określa czy drukować SWIFT zawsze, gdy kontrahent nie jest krajowy" />
+		<!-- TASK: 9940 [7.7] -->
+		<col name="DrukujNumeryPoprzednichKorekt" type="boolean" category="Drukowanie"
+				 description="Określa, czy będą drukowane numery poprzednich korekt." />
+    <col name="DrukujOrygKopia" type="boolean" category="Drukowanie"
+   description="Drukuj napis oryginał/kopia na dokumentach wystawionych po roku 2012."
+   caption="Drukuj napis oryginał/kopia" />
+    <col name="DrukujDateOperacji" type="boolean" category="Drukowanie" />
+    <col name="DrukujDateDostawy" type="boolean" category="Drukowanie" />
+    <col name="DrukujDateOtrzymania" type="boolean" category="Drukowanie" />
+    <col name="Procedura" type="string" length="255" category="Wydruk" caption="Nazwa procedury na fakturze"
+			 description="Nazwa procedury na fakturze (drukowana pod tytułem).">
+      <attribute>Dictionary("Han.DDH.Proc", ManualList=true)</attribute>
+    </col>
+    <col name="DrukujPlatnosci" type="boolean" category="Drukowanie" description="Drukuje listę nierozliczonych płatności." />
+    <col name="KodKreskowyZNumeremDok" type="KodKreskowyZNumeremDok" category="Wydruk" description="Drukowanie kodu kreskowego pod numerem dokumentu"/>
+		<col name="CechaNazwaTowaru" type="FeatureDefinition" category="Drukowanie"
+			 caption="Cecha wyliczająca nazwę towaru na wydruku"
+			 description="Wskazuje cechę pozycji dokumentu, która wyznaczy nazwę towaru na wydruku.">
+		</col>
+    <!-- /WYDRUKI -->
+
+		<col name="Numeracja" type="DefinicjaNumeracji" category="Definicja"
+				description="Ustawienia określające sposób numeracji dokumentów." />
+		<col name="SeriaOperatora" type="boolean" category="Definicja"
+			description="Wymusza uzupełnienie pola 'Seria' na dokumencie handlowym kodem aktualnie pracującego operatora." />
+		<!-- Mateusz: wprowadzenie słownika serii - TASK 8270 -->
+		<col name="SlownikSerii" type="boolean" category="Definicja"
+		  description="Umożliwia wprowadzenie serii bazującej na słowniku." />
+		<col name="PostfixSerii" type="string" category="Definicja" length="13"
+			 description="Postfix identyfikujący serię w słowniku" />
+		<col name="WartosciTylkoZeSlownika" type="boolean" category="Definicja"
+			 description="Określa, czy operator może wprowadzić wartość spoza słownika" />
+		<!-- Koniec 8270 -->
+		<!-- TASK: 4371. [6.0] -->
+		<col name="DefNaglowek1Xml" type="text" category="Definicja"
+		   description="Parametr przechowujący definicję pierwszego definiowalnego nagłówka" />
+		<!-- TASK: 4371. [6.0] -->
+		<col name="DefNaglowek2Xml" type="text" category="Definicja"
+		   description="Parametr przechowujący definicję drugiego definiowalnego nagłówka" />
+		<!-- TASK: 4371. [6.0] -->
+		<col name="DefPodsumowanieXml" type="text" category="Definicja"
+		   description="Parametr przechowujący definicję definiowalnego podsumowania" />
+		<col name="DefNaglowekPXml" type="text" category="Definicja"
+		   description="Parametr przechowujący definicję definiowalnego nagłówka dla pozycji" />
+		<!-- WPROWADZANIE -->
+		<col name="Kategoria" type="KategoriaHandlowa" category="Lista dokumentów"
+			 description="Kategoria dokumentów grupująca dokumenty na liście." />
+		<col name="Wewnetrzny" type="boolean" category="Lista dokumentów"
+			 description="Określa, czy dokument magazynowy ma być raportowany jako wewnętrzny." />
+		<col name="Anulowany" type="boolean" category="Lista dokumentów"
+			 description="Określa czy dokument może być anulowany." />
+		<col name="Kasowany" type="boolean" category="Lista dokumentów"
+			 description="Określa czy dokument może być kasowany przez operatora programu." />
+		<col name="NazwaDaty" type="string" length="50" category="Lista dokumentów"
+			 description="Określa nazwę pola 'Data' wyświetlanego na formularzu dokumentu." />
+		<col name="NazwaDatyOperacji" type="string" length="50" category="Lista dokumentów"
+			 description="Określa nazwę pola 'Data operacji' wyświetlanego na formularzu dokumentu." />
+    <col name="NazwaDatyDostawy" type="string" length="50" category="Lista dokumentów" modifier="public virtual"
+         description="Określa nazwę pola 'Dostawa.Termin' wyświetlanego na formularzu dokumentu." />
+    <col name="EdycjaDatyDostawy" type="EdycjaDatyDostawy" category="Lista dokumentów" modifier="public virtual"/>
+    <col name="InicjalizacjaDatyDostawy" type="InicjalizacjaDatyDostawy" category="Lista dokumentów" />
+    <col name="InicjalizacjaDatyDostawyCecha" type="string" category="Lista dokumentów" length="30" modifier="protected" readonly="set"
+         description="Wskazuje cechę dokumentu (typu Data), która dostarczy algorytm inicjujący datę dostawy." />
+		<col name="DuplikatWartosci" type="boolean" category="Lista dokumentów"
+			 description="Określa, czy dokument duplikuje wartość innego dokumentu i nie powinien być uwzgledniany przy sumowaniu." />
+		<col name="Buforowanie" type="SposobBuforowania" category="Lista dokumentów"
+			 description="Określa sposób działania stanu dokumentu w buforze.">
+			<verifier name="DefDokHandlowego.ZapisNaBiezacoVerifier" />
+		</col>
+		<col name="CyklFakturowaniaUmowy" type="DefinicjaCykluTyp" category="Umowy"
+			 description="Określa domyślny cykl fakturowania umowy." />
+		<col name="RodzajUmowy" type="RodzajUmowy" category="Umowy"
+			 description="Określa rodzaj umowy." />
+		<col name="CyklFakturowaniaSposobNaDniWolne" type="DefinicjaCykluSposobNaDniWolne" category="Umowy"
+			 description="Określa domyślny sposób obsługi, gdy dzień faktuorowania wypada na dzień wolny." />
+		<!-- TASK: 4371. [6.0] -->
+		<col name="Umowa" type="TypUmowy" category="Umowy" readonly="true" modifier="private"
+			 description="Określa typ umowy.">
+			<attribute>Obsolete("Do zastąpienia za pomocą definicji cyklu.")</attribute>
+		</col>
+		<col name="KontrahentWymagany" type="WymaganieKontrahenta" category="Kontrahent"
+			 description="Określa sposób wprowadzania kontrahenta do dokumentu handlowego." />
+		<col name="FiltrKontrahenta" type="string" length="250" category="Kontrahent"
+			 description="Filtr listy kontrahentów, wprowadzanych do dokumentu." />
+		<col name="TypFiltruKontrahenta" type="TypFiltruKontrahenta" category="Kontrahent"
+			 description="Określa filtrowanie kontrahentów na liście podczas wprowadzania dokumentu.">
+			<attribute>Obsolete("Pole nie jest używane.")</attribute>
+		</col>
+		<col name="FiltrKontrahentaStosowanie" type="FiltrKontrahentaStosowanie" category="Kontrahent"
+			 caption="Pozwalaj na wykluczonego kontrahenta"
+			 description="Określa sposób stosowanie filtra kontrahentów podczas wprowadzanie kontrahenta na dokument." />
+		<col name="DozwolonyIncydentalny" type="boolean" name12="DozwIncyd" category="Kontrahent"
+			 description="Określa, czy kontrahent incydentalny jest dozwolony." />
+		<col name="WyborTowaru" type="WyborTowaru" category="Towary" modifier="public virtual"
+			 description="Określa sposób wyboru towaru." />
+		<col name="FiltrStanuTowaru" type="FiltrStanuTowaru" category="Towary" modifier="public virtual"
+			 description="Określa filtrowanie towaru wg stanu w magazynie." />
+		<col name="FiltrTowaru" type="string" length="250" category="Towary"
+			 description="Filtr listy towarów, wyświetlanej podczas dodawania pozycji na dokument." />
+		<col name="TowarWgDostawcy" type="TowarWgDostawcy" category="Towary"
+			 description="Wymusza wyszukiwanie towaru wg standardowego dostawcy." />
+		<col name="TypFiltruTowaru" type="TypFiltruTowaru" category="Towary"
+			 description="Określa filtrowanie towaru wg typu." />
+		<col name="IloscTowaruKopiowana" type="IloscTowaruKopiowana" category="Towary"
+			 description="Ilość towaru kopiowana do dokumentu podrzędnego." />
+		<!-- TASK: 2690. [4.5] -->
+		<col name="JestWalutaKontrahenta" type="boolean" category="Towary"
+			 description="Określa, czy ceny pozycji na dokumencie będą wyrażone w walucie kontrahenta.">
+			<attribute>Obsolete("Zastąpiono parametrami: 'Waluta płatności', 'Waluta pozycji'.")</attribute>
+			<attribute>Browsable(false)</attribute>
+		</col>
+		<col name="KopiujCechyDostawy" type="boolean" category="Towary"
+			 description="Określa, czy cechy z Dostawy zostaną przeniesione na pozycję dokumentu rozchodowego."
+			caption="Kopiuj cechy z dostawy." />
+		<col name="BlokadaEdycjiDaty" type="boolean" category="Blokady"
+			 description="Parametr, który uniemożliwia edycję daty głównej (pole data na zakładce ogólne)"/>
+		<col name="BlokadaEdycjiMagazynu" type="boolean" category="Blokady"
+			 description="Parametr, który uniemożliwia edycję magazynu z poziomu dokumentu (pole Magazyn na zakładce ogólne)"/>
+		<col name="BlokadaEdycjiDatyOperacji" type="boolean" category="Blokady"
+			 description="Parametr, który blokuje edycję daty operacji przez operatora"/>
+		<col name="BlokadaEdycjiDatyOtrzymania" type="boolean" category="Blokady"
+			 description="Parametr, któy blokuje edycję daty otrzymania."/>
+		<col name="NieWymagajCech" type="boolean" category="Inne"
+			 description="Określ, czy nie sprawdzać wymagalności cech dokumentu i pozycji." />
+		<!-- TASK: 3889. [5.3] i 3890. [5.3] -->
+		<col name="CechyWymagane" type="text" category="Inne"
+			 description="Reprezentuje listę cech wymaganych na dokumentach i pozycjach dokumentów." />
+        <col name="EdycjaWTrybieKoszyka" type="EdycjaWTrybieKoszyka" category="Lista i dodawanie" modifier="public virtual"
+             description="Parametr decydujący o tym, czy dokument może być wystawiany jako koszyk." />
+		<!-- /WPROWADZANIE -->
+
+		<!-- FORMULARZ -->
+		<col name="Dodawanie" type="SposobDodawaniaHandlowego" category="Lista i dodawanie"
+			 description="Określa, czy dokumenty tej definicji mogą być dodawane oraz czyto jest standardowy dokument." />
+		<col name="Klawisz" type="string" length="1" category="Lista i dodawanie"
+			 description="Klawisz do szybkiego dodawania dokumentu." />
+		<!-- TASK: 6911. [7.1] /sbm -->
+		<col name="KreatorDokumentu" type="KreatorDokumentu" category="Wygląd formularza"
+			 description="Ustawienia kreatora dokumentu handlowego." >
+			<attribute>Browsable(false)</attribute>
+		</col>
+		<col name="KreatorDokumentuTowaryPodsumowanieXml" type="text"
+			 description="Definicja indywidualnego podsumowania listy towarów." />
+		<col name="TylkoPodglad" type="boolean" category="Wygląd formularza"
+			 description="Zakazuje jakichkolwiek operacji modyfikacji dokumentu przez operatora programu." />
+		<col name="Naglowek" type="string" length="100" category="Formularz"
+			 description="Określa widok nagłówka dokumentu.">
+			<attribute>Dictionary("Handel.Head", ReadOnly=true)</attribute>
+		</col>
+		<col name="Naglowek2" type="string" length="100" category="Wygląd formularza"
+			 description="Określa widok drugiego nagłówka dokumentu.">
+			<attribute>Dictionary("Handel.Head", ReadOnly=true)</attribute>
+		</col>
+		<col name="Podsumowanie" type="string" length="100" category="Wygląd formularza"
+			 description="Określa widok podsumowania dokumentu.">
+			<attribute>Dictionary("Handel.Footer", ReadOnly=true)</attribute>
+		</col>
+
+		<col name="NaglowekP" type="string" length="100" category="Formularz"
+			 description="Określa widok nagłówka pozycji dokumentu.">
+			<attribute>Dictionary("Handel.HeadP", ReadOnly=true)</attribute>
+		</col>
+
+		<!-- TID: 11652; V: 8.0; [KK]; -->
+		<col name="FormNET" type="boolean" category="Wygląd formularza" caption="Określa czy istnieje zakładka użytkowniak w enovaNET." />
+		<col name="XmlNET" type="text" category="Wygląd formularza" caption="Definicja zakładki użytkownika w enovaNet." />
+		<!-- ^TID: 11652; -->
+
+		<!-- TASK: 4723. [6.0] -->
+		<col name="OkrDostawcaOdbiorca" type="OkreslenieKontrahenta" category="Wygląd formularza"
+			 description="Określenie drugiego kontrahenta." />
+		<!-- TASK: 5364. [6.1] -->
+		<col name="PokazKomunikat" type="boolean" category="Wygląd formularza"
+			 description="Decyduje o pokazywaniu komunikatu o kontrahencie podczas jego ustawianiu na dokument." />
+		<col name="ZmianaWartosciPozycji" type="ZmianaWartosciPozycji" category="Edycja pozycji dokumentu"
+			 description="Określa zachowanie dokumentu po zmianie wartości pozycji dokumentu." />
+		<col name="CenaPoRabacieLiczonaOdWartosci" type="boolean" category="Edycja pozycji dokumentu"
+			 description="Wartość wskazuje na to, czy cena po rabacie będzie liczona od wartości pozycji." />
+		<col name="BlokadaCeny" type="boolean" category="Edycja pozycji dokumentu"
+			 description="Blokuje możliwość edycji ceny na pozycji dokumentu." />
+		<col name="PozwalajWartosc0" type="boolean" category="Edycja pozycji dokumentu"
+			 description="Określa, czy można zatwierdzać dokumenty, które mają wartość 0." />
+		<col name="CenaWartosc0" type="boolean" category="Edycja pozycji dokumentu"
+				 description="Określa, czy pozycje dokumentu mają zerową cenę i wartość." />
+		<col name="SprzedazPonizejCenyMinimalnej" type="SprzedazPonizejCenyMinimalnej" category="Edycja pozycji dokumentu"
+			 description="" />
+		<!-- TASK: 2924. [5.2] -->
+		<col name="PozwalajIlosc0" type="boolean" category="Edycja pozycji dokumentu"
+			 description="Określa, czy można zatwierdzać dokumenty, które mają na pozycji ilość 0." />
+		<col name="NiezgodnoscWartosci" type="boolean" category="Edycja pozycji dokumentu"
+			 description="Umożliwia pojawienie się pewnych niezgodności w wyliczeniu wartości pozycji, ponieważ po zmianie wartości i przeliczeniu innego elementu pozycji wartość nie będzie ponownie naliczana." />
+		<col name="JednostkaAlternatywna" type="boolean" category="Edycja pozycji dokumentu"
+			 description="Ilość pozycji wyrażona w alternatywnej jednostce towaru." />
+		<col name="AktualizujCeny" type="SposobAktualizacjiCen" category="Zatwierdzanie dokumentu"
+			 description="Określa sposób aktualizowania cennika po wprowadzeniu dokumentu." />
+		<col name="PoleSortowania" type="string" length="128" category="Zatwierdzanie dokumentu"
+			 description="Określa pole po którym na zapis sesji zostaną przesortowane pozycjie dokumentu." >
+      <attribute>ControlEdit(ControlEditKind.PathProperty)</attribute>
+    </col>
+		<col name="PozwalajZatwierdzacBezPozycji" type="boolean" category="Zatwierdzanie dokumentu" description="Określa czy dokument może być zatwierdzany bez pozycji." />
+		<!-- /FORMULARZ -->
+
+		<!-- POZOSTAŁE -->
+		<col name="EdycjaStawkiVAT" type="boolean" category="VAT i fiskalizacja"
+			 description="Określa, czy na pozycjach dokumentu jest możliwa edycja stawki VAT." />
+		<col name="Fiskalizowany" type="boolean" category="VAT i fiskalizacja"
+			 description="Określa dokument jest fiskalizowany czyli taki, który drukowany jest na drukarce fiskalnej." />
+		<col name="RodzajWydrukuFiskalnego" type="RodzajWydrukuFiskalnego" category="VAT i fiskalizacja"
+				 description="Rodzaj wydruku fiskalnego dla drukarek fiskalnych nowego typu." />
+		<col name="SumyVAT" type="SposobLiczeniaSumVAT" category="VAT i fiskalizacja"
+			 description="Określa sposób liczenia sum VAT oraz czy możliwa jest ich korekta." />
+		<col name="WyborStawkiVAT" type="WyborStawkiVAT" category="VAT i fiskalizacja"
+			 description="Określa, w jaki sposób należy zainicjować stawkę VAT podczas dodawania pozycji dokumentu." />
+		<col name="WyborStawkiVATWgDaty" type="RodzajDaty" category="VAT i fiskalizacja"
+			 description="Określa datę, według której należy zainicjować stawkę VAT podczas dodawania pozycji dokumentu." />
+		<col name="KasaZbiorcza" type="boolean" caption="Zbiorcze księgowanie kasy" category="Księgowość i płatności"
+			 description="Określa, że księgowanie kasy będzie odbywać się zbiorczo."/>
+
+		<col name="WalutaPlatnosci" type="Waluta" caption="Waluta płatności" category="Księgowość i płatności"
+			 description="Waluta, w której będzie wyliczona płatność za dokument.">
+			<!-- TASK: 2522. [4.3] -->
+			<verifier name="DefDokHandlowego.KorektaVerifier"/>
+		</col>
+		<col name="KierunekPlatnosci" type="KierunekPlatnosci" category="Księgowość i płatności"
+			 description="Określa sposób generowania płatności do dokumentu i czy w ogóle ma generować płatność." />
+		<col name="KierunekZaliczki" type="KierunekPlatnosci" category="Księgowość i płatności"
+			 description="Określa sposób wprowadzania zaliczki płatności do dokumentu i czy w ogóle wprowadzać zaliczkę." />
+		<col name="SposobPrzenoszeniaZaliczki" type="SposobPrzenoszeniaZaliczki" category="Księgowość i płatności"
+			description="Określa sposób w jaki zaliczka jest rozliczana przez dokument końcowy." />
+		<col name="EdycjaWartosci" type="EdycjaWartosciDokumentu" category="Księgowość i płatności"
+			 description="Określa sposób modyfikacji wartości dokumentu (np w celu wprowadzenia płatności w innej walucie)." />
+		<col name="DataKursu" type="DefDataKursu" category="Księgowość i płatności"
+			 description="Określa datę kursu użytego na dokumencie." />
+		<!-- TASK: 7863. [7.3] /sbm -->
+		<col name="DefinicjaEwidencjiZrodlo" type="ZrodloEwidencji" category="Księgowość i płatności"
+			 caption="Źródło definicji ewidencji"
+			 description="Wskazuje na źródło pozyskania definicji ewidencji." />
+		<col name="DefinicjaEwidencji" type="DefinicjaDokumentu" name12="DefEwid" category="Księgowość i płatności"
+			 description="Informacja o miejscu umieszczenia dokumentu w ewidencji księgowej (sposobie księgowania)." />
+    <col name="OpisEwidencji" type="TworzenieOpisuEwidencji" category="Księgowość i płatności" caption="Tworzenie opisu ewidencji" description="Określa sposób tworzenia opisu ewidencji." />
+		<col name="OpisEwidencjiCecha" type="FeatureDefinition" category="Księgowość i płatności" caption="Cecha opisu ewidencji" description="Cecha licząca opis ewidencji." />
+
+		<!-- TASK: 7863. [7.3] /sbm -->
+		<col name="DefinicjaEwidencjiCecha" type="string" length="30" category="Księgowość i płatności"
+			 caption="Cecha wyliczająca definicję ewidencji"
+			 description="Wskazuje cechę dokumentu (algorytmiczną i referencyjną do tabeli DefDokumentow), która dostarczy definicję ewidencji.">
+		</col>
+		<col name="SposobZaplaty" type="SposobZaplaty" category="Księgowość i płatności"
+			 description="Określa sposób zapłaty dokumentu przez kontrahenta." />
+		<col name="PlanSplat" type="boolean"  category="Księgowość i płatności"
+			 description="Określa, czy wprowadzane płatności mają być tylko propozycją spłat dla dokumentu nadrzędnego."/>
+		<!-- TASK: 6119. [7.1] -->
+		<col name="PlatnoscKaucji" type="boolean" category="Księgowość i płatności"
+			 description="Decyduje czy na dokumencie jest stosowana płatność kaucji." />
+		<col name="ZablokujEdycjeKursu" type="boolean" category="Księgowość i płatności"
+			 description="Blokuje dla korekt edycje kursu daty i wartości." />
+		<col name="PozwalajWielowalutowy" type="boolean" category="Księgowość i płatności"
+			 description="Określa, czy dopuszczalne są płatności w różnych walutach." />
+		<col name="KursWgDaty" type="KursWgDaty" category="Księgowość i płatności"
+			 description="Określa, z której daty ma być pobierany kurs." />
+		<!-- TASK: 6744 [7.7] -->
+		<col name="NieWplywaNaOstatniaCeneZakupu" category="Księgowość i płatności" type="boolean" caption="Nie wpływa na ostatnią cenę zakupu"
+			 description="Określa, czy dokument nie ma wpływu na ostatnią cenę zakupu." />
+		<!-- Task 11092 [7.9] -->
+		<col name="TerminPlatnosciLiczonyOd" type="TerminPłatnościLiczonyOd" category="Księgowość i płatności" caption="Termin płatności liczony od daty"
+			 description="Określa datę od jakiej ma być liczony termin płatności." />
+		<!-- 8.3 -->
+		<col name="KontrolaLimituKredytowego" category="Księgowość i płatności" type="boolean" caption="Kontrola limitu kredytowego"
+				 description="Określa, czy dokument podlega kontroli limitu kredytowego." />
+		<col name="ZachowaniePoLimicie" category="Księgowość i płatności" type="ZachowaniePoPrzekroczeniuLimituKredytowego"
+			  caption="Zachowanie po przekroczeniu limitu kredytowego"
+					description="Określa, zachowanie po przekroczeniu limitu kredytowego." />
+    <col name="ZaplataPrzyZatwierdzaniu" type="DostepnoscMenadzeraRozliczen"
+         caption="Zapłata przy zatwierdzaniu" category="Księgowość i płatności"
+         description="Wskazuje na to, czy interfejs z obsługą zapłat i rozliczeń pojawi się podczas zatwierdzania." />
+
+    <col name="WzorzecOpisuPlatnosci" type="string" length="255" caption="Wzorzec opisu płatności" />
+		<col name="Intrastat" type="RodzajIntrastat" category="UE Intrastat" description="Sposób uwzględniania dokumentu na raporcie Intrastat." />
+		<col name="RodzajTransakcji" type="KodRodzajuTransakcji" category="UE Intrastat" description="Rodzaj transakcji raportowany na dokumencie Intrastat." />
+		<col name="WarunkiDostawy" type="WarunkiDostawy" category="UE Intrastat" description="Kod warunków dostawy towaru raportowany na dokumencie Intrastat." />
+		<col name="RodzajTransportu" type="KodRodzajuTransportu" name12="Transport" category="UE Intrastat" description="Kod rodzaju transportu towaru raportowany na dokumencie Intrastat." />
+        <col name="DataOkresIntrastat" type="DataOkresIntrastat" category="UE Intrastat" description="Rodzaj daty wejścia do deklaracji" />
+
+		<col name="KierunekMagazynu" type="KierunekPartii" category="Magazyn"
+				 description="Określa kierunek wprowadzania partii towaru na magazyn." >
+			<!-- TASK: 2522. [4.3] -->
+			<verifier name="DefDokHandlowego.KorektaVerifier"/>
+		</col>
+		<col name="TypPartiiMagazynowej" type="TypPartii" category="Magazyn"
+			 description="Określa jakiego typu partia towaru będzie generowana na magazyn." />
+		<col name="MomentMagazynu" type="MomentMagazynu" category="Magazyn"
+			 description="Określa czas, kiedy dokument ściągnie/doda do magazynu partię towaru.">
+			<verifier name="DefDokHandlowego.MarżaZeroVerifier" />
+			<verifier name="DefDokHandlowego.ZapisNaBiezacoVerifier" />
+		</col>
+		<col name="ZmianaMarzy" type="ZmianaMarzy" category="Magazyn"
+			 description="Określa sposób wpływania dokumentów przychodowych na marżę dokumentu rozchodowego.">
+			<verifier name="DefDokHandlowego.MarżaZeroVerifier" />
+		</col>
+    <col name="FiltrZasobow" type="string" length="250" category="Magazyn"
+			 description="Filtr zasobów, wg którego lista zasobów do pobrania jest zawężona." />
+		<!-- TASK: 3360, [5.1] -->
+		<col name="RezerwowacTowar" type="boolean" category="Magazyn"
+			 description="Określa czy rezerwować towar na zasobie powstałym z dokumentu." />
+		<col name="MinimumMarzy" type="boolean" category="Magazyn" name12="MinMarza"
+			 description="Sprawdzenie rozchodów powyżej minimalnej marży towaru." />
+		<col name="UstawieniaWskazaniePartii" type="UstawieniaWskazaniePartii" category="Magazyn"
+			 description="Grupa ustawień dotyczących wskazania partii." />
+		<col name="PozwalajMagazynBezPraw" type="boolean" category="Magazyn"
+			 description="Pozwala na użycie magazynu, gdy użytkownik nie posiada do niego praw."
+			 caption="Pozwól na nieuprawniony magazyn" />
+		<!-- TASK: 6595. [7.0] -->
+		<col name="WeryfikujRezerwacje" type="boolean" category="Magazyn"
+			 description="Określa czy weryfikować rezerwacje towaru na zasobach powiązanych z towarem." />
+
+    <col name="RezerwacjaOd" type="TypDatyRezerwacji" caption="Początek okresu rezerwacji" />
+    <col name="RezerwacjaOdDni" type="int" />
+    <col name="RezerwacjaDo" type="TypDatyRezerwacji" caption="Koniec okresu rezerwacji" />
+    <col name="RezerwacjaDoDni" type="int" />
+
+    <!-- /POZOSTAŁE -->
+
+		<col name="WidoczneCechy" type="text" category="Formularz"
+			description="Lista cen wyświetlanych na formularzu." />
+		<col name="WydrukDomyslny" type="boolean" category="Formularz"
+			description="Określa, czy podczas zatwierdzania formularza z dokumentem drukować domyślny wydruk." />
+		<col name="Cena" type="DefinicjaCeny" category="Cennik"
+				description="Określa cenę inicjującą pozycje na dokumencie."
+				relname="Cena Operacji" />
+		<col name="CenaKosztuUslugi" name12="CenaKoUs" type="DefinicjaCeny" category="Cennik"
+			description="Określa cenę kosztu usługi składnika kompletacji."
+			relname="Cena kosztu usługi" />
+		<col name="LiczonaOd" type="SposobLiczeniaVAT" required="true" category="Cennik"
+			description="Określa sposób liczenia wartości dokumentu (cenę): od brutto lub od netto." />
+		<col name="PrecyzjaCeny" type="PrecyzjaCeny" category="Cennik"
+			 description="Konfiguracja określania precyzji ceny na pozycji dokumentu handlowego."></col>
+		<col name="EwidencjaZKorekty" type="boolean" category="Księgowe"
+			 description="Określa użycie definicji ewidencji księgowej takiej jak na dokumencie korygowanym."
+			 modifier="protected">
+			<!-- TASK: 7863. [7.3] /sbm -->
+			<attribute>Obsolete("Proszę użyć właściwości ZrodloEwidencji.")</attribute>
+		</col>
+		<col name="NazwaTowaru" type="NazwaTowaruNaPozycji" category="Towar"
+			description="Określa sposób przenoszenia nazwy towaru na pozycje dokumentu." />
+		<col name="JestKWPZ" type="boolean" category="Magazyn" modifier="internal" />
+		<!-- TASK: 3969. [5.3] /sbm -->
+		<col name="SposobRozliczaniaNadrzednego" type="SposobRozliczaniaNadrzednego" category="Magazyn"
+			description="Określa, czy zmiany na dokumencie, pochodnym od tej definicji, będą powodowały zmiany w rozliczeniu, które dokument powoduje względem dokumentu sobie nadrzędnego." />
+		<col name="SposobEdycjiKompletacji" type="SposobEdycjiKompletacji" category="Kompletacja" modifier="public virtual"
+			 description="Określa sposób przeliczenia składników/produktów po zmianie ilości na KPL." />
+		<col name="Flags" type="Helpers.Flags" modifier="protected" category="Ogólne"
+			 description="Flagi dodatkowe." />
+		<col name="bi_disabled" type="boolean" category="Business Integrity"
+			description="Wyłącza mechanizm Business Integrity." />
+		<col name="KontrolerRelacjiInfo" type="KontrolerRelacjiInfo"
+			 description="Kontroler relacji." />
+		<col name="OkreslenieDatyWplaty" type="OkreslenieDatyZaplaty" category="Księgowość i płatności"
+			 description="Określa, jak zostanie ustalona data generowanej prze zatwierdzacz wpłaty." />
+		<col name="OkreslenieDatyWyplaty" type="OkreslenieDatyZaplaty" category="Księgowość i płatności"
+			 description="Określa, jak zostanie ustalona data generowanej prze zatwierdzacz wypłaty." />
+
+		<col name="EdycjaKosztuDodatkowego" type="boolean" category="Magazyn" caption="Edycja kosztu dodatkowego" description="Pozwala na dodanie/edycję kosztu dodatkowego." />
+		<col name="PodzialKosztuDodatkowego" type="PodzialKosztuDodatkowego" category="Magazyn" caption="Sposób podziału kosztu" description="Sposób podziału kosztu dodatkowego." />
+		<col name="CechaPodzialuKosztuDodatkowego" type="FeatureDefinition" category="Magazyn" caption="Wartość podziału kosztu" description="Cecha licząca wartość do podziału kosztu." />
+  
+		<!-- SUBROWS -->
+		<col name="LimitWartosciInfo" type="LimitWartosciInfo" />
+		<col name="OstrzezenieDlaEdycji" type="OstrzezenieDlaEdycji" />
+		<col name="ProdukcjaInfo" type="ProdukcjaShortInfo" />
+		<col name="ZmianaParametrowZasobuInfo" type="ZmianaParametrowZasobuShortInfo" />
+		<col name="InicjalizatorWalutyInfo" type="InicjalizatorWalutyInfo"
+			 caption="Reguły doboru walut."
+			 description="Ustawienia sposobu doboru walut dla: wartości pozycji, wartości dokumentu lub płatności."/>
+		<col name="InwentaryzacjaInfo" type="InwentaryzacjaInfo"
+			 caption="Reguły dotyczące inwentaryzacji."
+			 description="Ustawienie sposobu obsługi inwentaryzacji."/>
+		<col name="DokumentKoncowyInfo" type="DokumentKoncowyInfo" category="Relacje" />
+		<!-- /SUBROWS -->
+
+
+    <!-- 9.3 -->
+    <col name="RodzajLokDlaDostawy" type="SlownikElem" caption="Rodzaj lokalizacji" description="Rodzaj lokalizacji dla miejsca dostawy."/>
+    <col name="UsuwanieZerowychPozycjiKorekty" type="boolean"
+         caption="Usuwaj niekorygowane pozycje"
+         description="Dotyczy tylko i wyłącznie korekt i powoduje usuwanie pozycji korygowanie podczas zatwierdzania dokumentów i ich odtwarzanie podczas cofania do bufora." />
+
+    <col name="EdycjaIlosciZrealizowanej" type="EdycjaIlosciZrealizowanej" caption="Edycja ilości zrealizowanej" />
+    <col name="EdycjaStanuRealizacji" type="EdycjaStanuRealizacji" caption="Edycja stanu realizacji" />
+  </table>
+
+	<table name="DokumentHandlowy" tablename="DokHandlowe" guided="Exported"
+		tablecaption="Dokumenty handlowe">
+
+		<interface>IDokumentPlatny</interface>
+		<interface>IDokumentKsiegowalny</interface>
+		<interface>IDokumentKasowy</interface>
+		<interface>IDaneKontrahentaHost</interface>
+		<interface>IDokumentCRM</interface>
+		<interface>IKodowany</interface>
+    <interface>IExportImportXmlHost</interface>
+    <interface>IElementSlownika</interface>
+    <interface>IKomunikatEDIHost</interface>
+    <interface>IEmailElement</interface>
+
+    <key name="WgDaty">
+			<keycol name="Data" />
+			<keycol name="Czas" />
+		</key>
+		<key name="WgData">
+			<keycol name="Data" />
+		</key>
+		<key name="WgMagazynuNumer">
+			<keycol name="Magazyn" />
+			<keycol name="Numer.Pelny"/>
+		</key>
+		<key name="WgMagazynuObcy">
+			<keycol name="Magazyn" />
+			<keycol name="Obcy.Numer"/>
+		</key>
+		<!-- TASK: 2687. [5.0] -->
+		<key name="WgKontrahentaObcy">
+			<keycol name="Kontrahent"/>
+			<keycol name="Obcy.Numer"/>
+			<keycol name="Kategoria"/>
+		</key>
+		<key name="WgOkresIntrastat">
+			<keycol name="OkresIntrastat"/>
+		</key>
+		<!-- TASK: 6119. [7.1] -->
+		<key name="WgNumer">
+			<keycol name="Numer.Pelny"/>
+		</key>
+
+		<key name="WgMagazynInwentaryzacjaBlokowanieTowarow">
+			<keycol name="Magazyn"/>
+			<keycol name="InwentaryzacjaInfo.BlokowanieTowarow"/>
+			<keycol name="Data" />
+			<keycol name="Czas" />
+		</key>
+
+		<col name="Kategoria" type="KategoriaHandlowa" required="true" category="Dokument" readonly="set"
+				description="Kategoria dokumentów grupująca dokumenty na liście." />
+		<col name="Stan" type="StanDokumentuHandlowego"  category="Dokument"
+			description="Określa stan dokumentu handlowego (w buforze, zatwierdzony, zablokowany, anulowany).">
+			<verifier name="LimityWartosci.Verifiers.ZatwierdzanieDozwolone" onadded="false" />
+		</col>
+		<col name="Potwierdzenie" type="PotwierdzenieDokumentuHandlowego"  category="Dokument" important="true"
+			description="Określa stan potwierdzenia dokumentu handlowego, który można zmieniać również dla dokumentu zatwierdzonego." />
+
+		<col name="Definicja" type="DefDokHandlowego" category="Dokument"
+			description="Definicja dokumentu, określająca zachowanie się dokumentu w programie."
+			required="true"
+			relname="Definicja dokumentu"
+	  relright="true"
+		>
+			<keycol name="Magazyn"/>
+			<keycol name="Data" />
+			<keycol name="Czas" />
+			<attribute>Context</attribute>
+			<verifier name="DokumentHandlowy.KontrahentVerifier" />
+		</col>
+		<col name="Magazyn" type="Magazyn" category="Magazyn" required="true"
+			description="Magazyn, na który wpływa dokument."
+			relright="false"
+			relname="Magazyn dokumentu">
+			<attribute>Context</attribute>
+      <verifier name="DokumentHandlowy.DataOperacjiWOkresieDostepnosciMagazynuVerifier" onadded="true"/>
+			<keycol name="Data" />
+			<keycol name="Czas" />
+		</col>
+		<col name="TypPartii" type="TypPartii" category="Magazyn" readonly="set"
+			description="Określa jakiego typu partia towaru będzie generowana na magazyn." />
+		<col name="KierunekMagazynu" type="KierunekPartii" category="Magazyn" readonly="set"
+			description="Określa kierunek wprowadzania partii towaru na magazyn." />
+		<col name="FiltrZasobow" type="string" length="250" category="Magazyn" modifier="protected" readonly="set"
+			 description="Filtr zasobów, wg którego lista zasobów do pobrania jest zawężona." />
+		<!-- TASK: 3969. [5.3] /sbm -->
+		<col name="SposobRozliczaniaNadrzednego" type="SposobRozliczaniaNadrzednego" category="Magazyn"
+			description="Określa, czy zmiany na tym dokumencie, będą powodowały zmiany w rozliczeniu, które ten dokument powoduje względem dokumentu sobie nadrzędnego." />
+
+		<col name="Numer" name12="Nr" type="NumerDokumentu" category="Dokument"
+			description="Informacje o numerze dokumentu (numeracja)." />
+		<!-- TASK: 4933. [6.0] -->
+		<col name="NumerPelnyZapisany" type="string" length="40" category="Dokument"
+		  description="Numer dokumentu, wykorzystywana do zapisania numeru dokumentu." />
+		<col name="Seria" type="string" length="30" category="Dokument"
+				description="Seria dokumentu, wykorzystywana do numeracji dokumentu." />
+		<!-- TASK: 4933. [6.0] -->
+		<col name="SeriaZapisana" type="string" length="30" category="Dokument"
+				description="Seria dokumentu, wykorzystywana do zapisania serii dokumentu." />
+		<col name="Data" type="date" required="true" category="Dokument"
+				description="Data wystawienia dokumentu."/>
+		<col name="Czas" type="time" category="Dokument"
+			description="Godzina wystawienia dokumentu."/>
+		<col name="DataOperacji" type="date" required="true" category="Dokument"
+			description="Faktyczna data czynności dokumentu (sprzedaży, zakupu, itp)." >
+			<verifier name="UmowaInfo.Verifiers.AneksUmowaOdVerifier" onadded="true"/>
+      <verifier name="DokumentHandlowy.DataOperacjiWOkresieDostepnosciMagazynuVerifier" onadded="true"/>
+		</col>
+		<!-- TASK: 4371. [6.0] -->
+		<col name="CzestotliwoscRozliczania" type="CzestotliwoscRozliczania" category="Umowy" modifier="private"
+		  description="Częstotliwość fakturowania umów." readonly="true">
+			<attribute>Obsolete("Do zastąpienia za pomocą definicji cyklu.")</attribute>
+		</col>
+		<!-- TASK: 4371. [6.0] -->
+		<col name="TerminRozliczenia" type="date" category="Umowy"
+		  description="Termin pierwszego rozliczenia." readonly="true">
+			<attribute>Obsolete("Do zastąpienia za pomocą definicji cyklu.")</attribute>
+		</col>
+		<!-- TASK: 4371. [6.0] -->
+		<col name="TypTerminuRozliczenia" type="TypTerminuRozliczenia" category="Umowy" modifier="private"
+		  description="Typ terminu rozliczenia." readonly="true">
+			<attribute>Obsolete("Do zastąpienia za pomocą definicji cyklu.")</attribute>
+		</col>
+		<!-- TASK: 6440. [7.0] -->
+		<col name="RozliczanieZbiorcze" type="boolean" category="Umowy" readonly="true"
+			 description="Określa czy umowę należy rozliczać zbiorczo gdy jest taka sama data i kontrahent na dokumencie rozliczającym." >
+			<attribute>Obsolete("To należy zastąpić utworzeniem dokumentu zbiorczego przez menu Relacje.")</attribute>
+		</col>
+		<!-- TASK: 6441. [7.0] -->
+		<col name="CenaNaPodrzedny" type="boolean" category="Umowy" modifier="public virtual"
+			 description="Określa czy nadrzędny dokument ma narzucać cenę na rozliczającyy go podrzędny dokument." />
+		<col name="UmowaInfo" type="UmowaInfo" category="Umowy"
+			 description="Dane właściwe dla umowy."/>
+		<col name="Kontrahent" type="Kontrahent" category="Kontrahent" modifier="public virtual"
+			 description="Kontrahent, któremu przyporządkowany jest dokument."
+			 children="DokumentyHandlowe"
+			 relname="Kontrahent dokumentu handlowego">
+			<keycol name="Magazyn" />
+			<keycol name="Data" />
+			<keycol name="Czas" />
+			<verifier name="DokumentHandlowy.KontrahentVerifier" onadded="true" />
+			<verifier name="DokumentHandlowy.KontrahentFiltrKontrahentaVerifier" />
+			<verifier name="DokumentHandlowy.KomunikatOKontrahencieVerifier" />
+		</col>
+    <col name="Odbiorca" type="Kontrahent" category="Kontrahent" modifier="public virtual"
+			description="Odbiorca towarów z dokumentu."
+			relname="Odbiorca dokumentu handlowego" children="DokumentyHandloweOdbiorcy"
+    >
+      <keycol name="Magazyn" />
+    </col>
+		<!-- TASK: 8154. [7.4] /sbm -->
+		<col name="OdbiorcaMiejsceDostawy" type="Lokalizacja" category="Kontrahent" modifier="public virtual"
+			 caption="Miejsce dostawy"
+			 description="Lokalizacja odbiorcy będąca miejscem docelowym dostawy." />
+		<col name="Osoba" type="string" length="40" category="Kontrahent"
+			description="Osoba podpisująca dokument (fakturę) w imieniu kontrahenta." />
+		<col name="SymbolKasy" type="string" length="12" category="Dokument"
+			description="Symbol kasy fiskalnej, która zafiskalizowała ten dokument." />
+
+		<col name="Obcy" type="DokumentObcy"
+			description="Inforamacja o dokumencie obcym, pochodzącym od kontrahenta." />
+		<col name="Dostawa" type="DokumentDostawa"
+			description="Inforamacja o dostawie towaru." />
+		<!-- TASK: 2520. [4.3] -->
+    <col name="OsobaKontrahenta" type="KontaktOsoba" category="Dostawa"
+			 description="Osoba koordynująca dostawę po stronie kontrahenta.">
+      <attribute>Context(Required = false)</attribute>
+    </col>
+
+		<col name="LiczonaOd" type="SposobLiczeniaVAT" required="true" category="Cennik" 
+			description="Sposób liczenia wartości dokumentu: od ceny netto lub brutto." />
+		<col name="Rabat" type="percent" category="Cennik" modifier="public virtual"
+			description="Proponowany rabat, który jest przepisywany do pozycji dokumentu."/>
+		<col name="PrecyzjaCeny" type="PrecyzjaCeny" category="Z definicji"
+			 description="Konfiguracja określania precyzji ceny na pozycji dokumentu handlowego."></col>
+
+		<col name="DefinicjaEwidencji" type="DefinicjaDokumentu" name12="DefEwid" category="Księgowe" readonly="set"
+			description="Informacja o miejscu umieszczenia dokumentu w ewidencji księgowej (sposobie księgowania)."
+			 keyprimary="true" relname="DefinicjaEwidencji" />
+		<col name="KorektaVAT" type="boolean" category="Księgowe"
+			description="Określa czy sumy VAT zostały zmienione ręcznie i nie zależą od pozycji dokumentu." />
+		<col name="Suma" type="BruttoNetto" category="Księgowe"
+			description="Podsumowana wartość dokumentu."/>
+    <col name="KrajPodatkuVat" type="KrajTbl" category="Księgowe" readonly="set"
+         description="Informacja o kraju, którego stawki VAT zostały zastosowane, czyli o kraju, w którym podatek jest należny.">
+      <verifier name="DokumentHandlowy.KrajPodatkuVatVerifier" onadded="true"/>
+    </col>
+
+		<col name="DataKursu" type="date" category="Kurs waluty"
+			description="Data, według której przeliczane są kursy walut."/>
+		<col name="TabelaKursowa" type="TabelaKursowa" category="Kurs waluty" required="true"
+			description="Tabela kursowa, wg której przeliczane są kwoty w walucie."/>
+		<col name="KursWaluty" type="double" category="Kurs waluty"
+			description="Wartość kursu waluty płatności." />
+
+		<col name="BruttoCy" type="currency" caption="Kwota płatności" category="Księgowe"
+			description="Kwota płatności dokumentu wyrażona w walucie."/>
+		<!-- 7.0.0 /sbm -->
+		<!--<col name="SumaVAT" type="currency" caption="Suma VAT" category="Księgowe"
+			description="Suma podatku VAT, która może być wyrażona w walucie.">
+			<attribute>Obsolete(@"[smach] Należy rozważyć usunięcie tej właściwości. Usunięto wizualizację tej wartości na DokumentDodatkoweSumyPage.")</attribute>
+		</col>-->
+
+		<col name="Poprawiajacy" type="Operator" category="Dodatkowe" caption="Poprawiający"
+			description="Operator, który jest w trakcie poprawiania dokuentu, będącego podstawowym dla tej rezerwacji." />
+
+		<col name="Pracownik" type="Pracownik" category="Dodatkowe"
+			description="Pracownik, który stworzył dokument, wykorzystywany przy numeracji dokumentu."
+			relname="Pracownik dokumentu handlowego"
+		>
+			<keycol name="Data"/>
+			<keycol name="Czas"/>
+		</col>
+
+		<col name="MiejsceSwiadczenia" type="string" length="2" category="UE"
+			description="Miejsce świadczenia (kraj) dostawy towaru, usługi determinujący miejsce opodatkowania." />
+		<col name="WarunkiDostawy" type="WarunkiDostawy" category="UE"
+			description="Kod warunków dostawy towaru raportowany na dokumencie Intrastat." />
+		<col name="RodzajTransportu" type="KodRodzajuTransportu" name12="Transport" category="UE"
+			description="Kod rodzaju transportu towaru raportowany na dokumencie Intrastat." />
+		<!-- TASK: 3810. [5.3] -->
+		<col name="RodzajTransakcji" type="KodRodzajuTransakcji" category="UE"
+			description="Rodzaj transakcji raportowany na dokumencie Intrastat." />
+		<col name="OkresIntrastat" type="date" name12="DataIntrs" category="UE"
+			description="Data decydująca o miesiącu, w którym dokument zostanie uwzględniony na deklaracji Intrastat." />
+
+		<col name="Opis" type="text" category="Dodatkowe" modifier="public virtual"
+			description="Opis dokumentu umiejscowiony na wydruku." />
+		<col name="MaxIdent" type="int" modifier="internal" />
+
+		<!-- TASK: 2493. -->
+		<col name="Korekta" type="boolean" category="Dodatkowe"
+			description="Wartość wskazująca na to, czy dokument stanowi korektę innego dokumentu." />
+
+		<col name="SposobPrzenoszeniaZaliczki" type="SposobPrzenoszeniaZaliczki" category="Zaliczka"
+			description="Określa sposób w jaki zaliczka jest rozliczana przez dokument końcowy." />
+
+		<!-- TASK: 6119. [7.1] -->
+		<col name="RodzajPlatnosciKaucji" type="RodzajPlatnosciKaucji" category="Opakowania"
+			 description="Określa sposób naliczania płatności na dokumecie kaucji." />
+
+		<col name="TerminRozliczeniaKaucji" type="date" category="Opakowania"
+			 description="Termin rozliczenia kaucji, na podstawie ustawień kontrahenta." />
+
+		<col name="InwentaryzacjaInfo" type="InwentaryzacjaInfo"
+			 caption="Reguły dotyczące inwentaryzacji."
+			 description="Ustawienie sposobu obsługi inwentaryzacji."/>
+
+		<col name="Flags" type="Helpers.Flags" modifier="protected" category="Ogólne"
+			 description="Flagi dodatkowe." />
+
+		<!-- SUBROWS -->
+		<col name="ProdukcjaInfo" type="ProdukcjaInfo" />
+		<col name="ZmianaParametrowZasobuInfo" type="ZmianaParametrowZasobuInfo"
+			 caption="Reguły doboru walut."
+			 description="Ustawienia sposobu doboru walut dla: wartości pozycji, wartości dokumentu lub płatności."/>
+		<!-- /SUBROWS -->
+    <col name="BuforOpisuAnalitycznego" type="boolean" category="Ogólne" description="Określa stan opisów analitycznych przypiętych do dokumentu."/>
+		<col name="Okres" type="FromTo" category="Ogólne" caption="Okres" description="Okres" />
+
+		<col name="PodzialKosztuDodatkowego" type="PodzialKosztuDodatkowego" category="Magazyn" caption="Sposób podziału kosztu" description="Sposób podziału kosztu dodatkowego." />
+		<col name="CechaPodzialuKosztuDodatkowego" type="FeatureDefinition" category="Magazyn" caption="Wartość podziału kosztu" description="Cecha licząca wartość do podziału kosztu." />
+
+    <col name="Realizacja" type="Realizacja" description="Stan, wynik realizacji" />
+    <col name="EDokumentInfo" type="EDokument" />
+	</table>
+
+  <subrow name="EDokument">
+    <col name="Podpisany" type="boolean" category="Inne" specialaccess="true" description="Określa czy dokument został już podpisany podpisem elektronicznym." />
+    <col name="Status" type="EDokumentStatus" specialaccess="true" category="Inne" description="Określa status dokumentu wysłanego." />
+    <col name="Rodzaj" type="EDokumentRodzaj" specialaccess="true" caption="Rodzaj e-dokumentu" description="Określa, rodzaj e-dokumentu." />
+    <col name="StatusData" type="date" specialaccess="true" caption="Data zmiany statusu" description="Określa, datę zmiany statusu." />
+    <col name="Archiwum" type="EDokumentArchiwum" specialaccess="true" caption="Rodzaj archiwum" description="Określa, rodzaj archiwum." />
+  </subrow>
+
+	<subrow name="OstrzezenieDlaEdycji">
+		<col name="Pokaz" type="boolean" modifier="public virtual" />
+	</subrow>
+
+	<subrow name="ProdukcjaShortInfo">
+		<col name="ObslugaTechnologii" type="boolean" category="Produkcja"
+			 caption = "Obsługa technologii"
+			 description="Określa, czy dokumenty tej definicji obsługują technologie." />
+	</subrow>
+
+	<subrow name="ProdukcjaInfo">
+		<key name="WgIdentyfikatorElementuPowiazanego" keyunique="false">
+			<keycol name="IdentyfikatorElementuPowiazanego"/>
+		</key>
+		<col name="IdentyfikatorElementuPowiazanego" type="guid" category="Produkcja"
+			 caption="Identyfikator elementu powiązanego"
+			 description="Dla pozycji GUID pozycji technologii (dla ZP i PWP - produkt, dla RWP - surowiec)." />
+	</subrow>
+
+	<subrow name="ZmianaParametrowZasobuShortInfo">
+		<col name="ZmianaParametrowZasobu" type="boolean" caption="Zmiana parametrów zasobu" readonly="false"
+			 description="Wskazuje na to czy, dokument umożliwia zmianę wartości (bez ilości) lub ilości (bez wartości) zasobu.">
+			<attribute>Browsable(true)</attribute>
+		</col>
+	</subrow>
+
+	<subrow name="ZmianaParametrowZasobuInfo">
+		<col name="ZmianaParametrowZasobu" type="boolean" caption="Zmiana parametrów zasobu" readonly="set" modifier="public virtual"
+			 description="Wskazuje na to czy, dokument umożliwia zmianę wartości (bez ilości) lub ilości (bez wartości) zasobu.">
+			<attribute>Browsable(false)</attribute>
+		</col>
+		<col name="Ilosc" type="Quantity" caption="Org.Ilość" readonly="set" modifier="public virtual"
+			 description="Ilość zasobu przed zmianą parametrów zasobu."></col>
+		<col name="WartoscCy" type="currency" caption="Org.Wartość" readonly="set" modifier="public virtual"
+			 description="Wartość zasobu przed zmianą parametrów zasobu."></col>
+	</subrow>
+
+	<subrow name="ZaliczkaInfo">
+		<col name="BruttoCy" type="currency" caption="Zaliczka bieżąca" readonly="set"
+			 description="Kwota brutto tej części zaliczki, która przypada na bieżącą pozycję dokumentu (z kompensacją zaokrągleń).">
+			<attribute>Browsable(false)</attribute>
+		</col>
+	</subrow>
+
+  <subrow name="UmowaInfo">
+    <col name="Cykl" type="DefinicjaCyklu"
+			 description="Określa cykl/częstotliwość fakturowania umowy." />
+    <col name="DataOkresuRozliczeniowego" type="date" modifier="public virtual"
+			 description="Określa datę początkową pierwszego okresu rozliczeniowego umowy." />
+    <col name="WgZuzycia" type="boolean" modifier="internal" readonly="set"
+			 description="Wskazuje na fakturowanie na podstawie zużycia. Identfyikuje umowę dostawy." caption="Wg zużycia" />
+    <col name="DomyslnyPodrzedny" type="DefDokHandlowego" modifier="public" readonly="false"
+			 required="false" relname="Definicja domyslnego podrzednego dokumentu" specialaccess="true"
+			 description="Domyślna definicja dokumentu, który powstanie w procesie masowego fakturowania." />
+  </subrow>
+
+	<subrow name="InwentaryzacjaInfo">
+		<col name="BlokowanieTowarow" type="boolean"
+			 caption="Blokada inwentaryzowanych towarów"
+			 description="Wskazuje na to, czy użycie inwentaryzowanych towarów na dokumentach magazynowych będzie blokowane?" />
+	</subrow>
+
+	<subrow name="KompletacjaInfo">
+		<col name="WspolczynnikNum" type="double" modifier="protected" readonly="set"
+			 description="Współczynnik kompletacji.">
+			<attribute>Browsable(false)</attribute>
+		</col>
+		<col name="WspolczynnikDen" type="double" modifier="protected" readonly="set"
+			 description="Współczynnik kompletacji.">
+			<attribute>Browsable(false)</attribute>
+		</col>
+		<col name="Dodatkowa" type="boolean" readonly="set"
+			 description="Dodatkowa." />
+		<col name="ProporcjaWartosci" type="boolean" modifier="public" readonly="false"
+			 description="Wskazuje że wartość składników ma być rozdzielona proporcjonalnie na produkty.">
+			<attribute>Browsable(false)</attribute>
+		</col>
+		<col name="Wartosc" type="currency" modifier="internal" readonly="set"
+			 description="Wartość elementu kompletu.">
+			<attribute>Browsable(false)</attribute>
+		</col>
+	</subrow>
+
+	<subrow name="KontrolerRelacjiInfo">
+		<col name="Disabled" type="boolean" modifier="public" readonly="false"
+			 description="Określa, czy kontroler relacji jest włączony." />
+		<col name="PrzeliczajPozycjeRelacji" type="boolean" modifier="public" readonly="false"
+			 description="Określa, czy kontroler relacji powinien przeliczać pozycje relacji handlwych." />
+	</subrow>
+
+	<table name="OkresZawieszenia" tablename="OkresyZawiesz"
+		  caption="Okres zawieszenia"
+		  tablecaption="Okresy zawieszenia">
+
+		<col name="Dokument" type="DokumentHandlowy" required="true" readonly="true" category="Dodatkowe"
+				description="Dokument, który zawieszono w tym okresie."
+				children="OkresyZawieszenia"
+				relname="Okresy zawieszenia"
+				delete="cascade"
+				relguided="inner"
+				relright="true"
+				keyprimary="true"
+				keyclass="Lp" keyclasscol="Lp"
+		/>
+
+		<col name="Lp" type="int" required="true" category="Ogólne" batchfield="false"
+				description="Liczba porządkowa okresu zawieszenia na dokumencie handlowym." />
+
+		<col name="Okres" type="FromTo" category="Ogólne"
+				description="Okres zawieszenia dokumentu handlowego." />
+
+	</table>
+
+	<subrow name="UstawieniaWskazaniePartii">
+		<col name="DoZamowien" type="boolean" modifier="public virtual"
+			 description="Wskazuje na to, czy możliwe jest wskazanie partii do zasobów zamówionych." />
+		<col name="ZasobyPodrzedne" type="boolean"
+			 description="Wskazuje na to, czy rezerwowanie partii będzie realizowane za pomocą zasobów podrzędnych." />
+		<col name="Opcje" type="WyborPartiiOpcje" modifier="public virtual"
+			 caption="Wybór partii i zasobu"
+			 description="Opcje mechanizmu wyboru partii." />
+		<col name="Przedmiot" type="WyborPartiiPrzedmiot" modifier="public virtual"
+			 caption="Dotyczy"
+			 description="Przedmiot mechanizmu wyboru partii." />
+		<col name="Flags" type="Helpers.Flags" modifier="protected" category="Ogólne"
+			 description="Flagi dodatkowe." />
+	</subrow>
+
+	<!-- TASK: 6911. [7.2] /sbm -->
+	<subrow name="KreatorDokumentu">
+		<col name="JestWlaczony" type="boolean"
+			 description="Określa, czy używać mechanizmu szybkiego wprowadzania pozycji dokumentu."/>
+		<col name="DomyslnaPodlistaTowaru" type="SzybkaTransakcjaTowarPodlista"
+			 description="Określa, która z dodatkowych podlist przy wyborze towaru będzie domyślna." />
+		<col name="Towary" type="KreatorDokumentuStrona"
+			 description="Ustawienia indywidualne listy towarów." />
+	</subrow>
+
+	<subrow name="KreatorDokumentuStrona">
+		<col name="Podsumowanie" type="KreatorDokumentuStronaIndywidualna"
+			 description="Ustawienia podsumowania indywidualnego." />
+	</subrow>
+
+	<subrow name="KreatorDokumentuStronaIndywidualna" >
+		<col name="Visible" type="boolean"
+			 description="Określa, czy na formularzu będzie widoczne sekcja indywidualna użytkownika." />
+	</subrow>
+
+	<subrow name="DokumentObcy">
+		<key name="WgNumer">
+			<keycol name="Numer" />
+		</key>
+		<col name="DataOtrzymania" type="date" category="Ogólne" caption="Data obcego"
+			description="Data otrzymania dokumentu obcego od kontrahenta." />
+		<col name="Numer" type="string" length="120" category="Ogólne" caption="Numer obcy"
+			description="Numer dokumentu obcego nadany przez kontrahenta." />
+	</subrow>
+
+	<subrow name="DokumentDostawa">
+		<col name="Termin" type="date" category="Ogólne"
+			description="Termin realizacji dostawy." />
+		<col name="Sposob" type="string" length="120" category="Ogólne"
+			description="Określa sposób dostarczenia towaru.">
+			<attribute>Dictionary("Handel.Dostawa", ManualList=true)</attribute>
+		</col>
+		<col name="Odpowiedzialny" type="string" length="30" category="Ogólne"
+			description="Określa osobę odpowiedzialną za realizację dostawy.">
+			<attribute>Dictionary("Handel.Odpowiedz", ManualList=true)</attribute>
+		</col>
+    <col name="Cykl" type="DefinicjaCyklu"
+			 description="Określa cykl/częstotliwość terminu dostawy." />
+	</subrow>
+
+	<table name="SumaVAT" tablename="SumyVAT"
+		caption="Suma VAT" tablecaption="Sumy VAT">
+
+		<col name="Dokument" type="DokumentHandlowy" required="true" readonly="true" category="Ogólne"
+			description="Dokument, do którego przypisana jest stawka VAT"
+			children="SumyVAT"
+			relname="Dokument sumy VAT"
+			delete="cascade"
+			relguided="inner"
+			relright="true"
+			keyprimary="true"
+			keyunique="true">
+			<keycol name="Stawka.Status"/>
+			<keycol name="Stawka.Procent"/>
+      <keycol name="Stawka.Kraj"/>
+		</col>
+		<col name="DefinicjaStawki" type="DefinicjaStawkiVat" required="true" category="Ogólne"
+			description="Definicja stawki VAT opisująca rodzaj stawki 22%, 7%, itp"
+			relname="Definicja sumy VAT" modifier="public virtual">
+			<verifier name="SumaVAT.DefinicjaStawkiVerifier" onadded="false"/>
+		</col>
+		<col name="Stawka" type="StawkaVat" category="Ogólne"
+			description="Typ stawki VAT" />
+		<col name="Suma" type="BruttoNetto" category="Ogólne"
+	  description="Kwoty netto, VAT i brutto." />
+    <col name="SumaCy" type="BruttoNettoCy" category="Ogólne" description="Kwoty w walucie netto, VAT i brutto.">
+      <attribute>Browsable(false)</attribute>
+    </col>
+	</table>
+
+	<table name="PozycjaDokHandlowego" tablename="PozycjeDokHan"
+		caption="Pozycja dokumentu"	tablecaption="Pozycje dokumentów">
+
+		<interface>IZrodloOpisuAnalitycznego</interface>
+
+		<key name="WgDaty" >
+			<keycol name="Data"/>
+		</key>
+		<key name="WgIdent" keyunique="true" >
+			<keycol name="Dokument" />
+			<keycol name="Ident" />
+		</key>
+		<key name="WgKierunek" >
+			<keycol name="Towar" />
+			<keycol name="KierunekMagazynu" />
+			<keycol name="Data" />
+			<keycol name="Czas" />
+		</key>
+		<key name="WgTowarDokumentu" >
+			<keycol name="Towar" />
+			<keycol name="Dokument" />
+		</key>
+
+		<col name="Dokument" type="DokumentHandlowy" required="true" readonly="true" category="Ogólne"
+			description="Dokument, do którego należy ta pozycja"
+			children="Pozycje"
+			relname="Pozycje dokumentu"
+			delete="cascade"
+			relguided="inner"
+			relright="true"
+			keyprimary="true"
+			keyclass="Lp" keyclasscol="Lp"
+		/>
+
+		<col name="Ident" type="int" category="Ogólne" required="true" readonly="set" batchfield="false"
+			description="Identyfikator pozycji na dokumencie handlowym." />
+
+		<col name="Dostawa" type="PozycjaDokHandlowego" category="Magazyn"
+			children="Dostawy"
+			description="Pozycja dostawy dla danego rozchodu magazynowego."
+			relname="Dostawa pozycji dokumentu" />
+		<col name="KierunekMagazynu" type="KierunekPartii" category="Magazyn" readonly="set"
+			description="Określa kierunek wprowadzania partii towaru na magazyn." />
+
+		<col name="Lp" type="int" required="true" category="Ogólne" batchfield="false"
+			description="Liczba porządkowa pozycji na dokumencie handlowym." />
+		<col name="Towar" type="Towar" required="true" modifier="public virtual" category="Ogólne"
+			description="Towar (karta towarowa), do którego odnosi się pozycja dokumentu."
+			relname="Pozycje dok.handlowego dla towaru"
+			children="Pozycje">
+			<keycol name="Data" />
+			<keycol name="Czas" />
+		</col>
+		<col name="Data" type="date" required="true" category="Ogólne" readonly="set"
+			description="Data powstania pozycji dokumentu, odczytywany z daty dokumentu." />
+		<col name="Czas" type="time" category="Ogólne" readonly="set"
+			description="Czas powstania pozycji dokumentu, odczytywany z czasu dokumentu." />
+
+		<col name="Nazwa" type="string" length="40" required="true" modifier="internal"
+			description="Początek nazwy pozycji najczęściej uzupełniany na podstawie karty towaru." />
+		<col name="JestOpis" type="boolean" modifier="internal"
+			description="Wskazuje, czy do nazwy należy dodać dodatkową informację znajdującą się w polu Opis." />
+		<col name="Opis" type="text" modifier="internal"
+			description="Opis dodawany na końcu nazwy pozycji dokumentu." />
+
+    <col name="VATOdMarzy" type="boolean" category="Księgowe"
+         readonly="set"
+         description="VAT od pozycji towaru liczony jest od marży. Na pozycji dokumentu handlowego jest NP." />
+    <col name="DefinicjaStawki" type="DefinicjaStawkiVat" category="Księgowe" required="true" modifier="public virtual"
+			description="Definicja stawki VAT naliczonej do tej pozycji dokumentu."
+			relname="Definicja stawki VAT">
+      <verifier name="DokumentHandlowy.KrajPodatkuVatVerifier" onadded="true"/>
+    </col>
+		<col name="DefinicjaPowstaniaObowiazkuVAT" type="DefinicjaPowstaniaObowiazkuVAT" cstype="Row" readonly="false"
+			 description="Definicja powstania obowiązku VAT dla pozycji." />
+		<col name="Stawka" type="StawkaVat" category="Księgowe"
+			description="Rodzaj stawki VAT, która została naliczona do tej pozycji dokumentu." />
+		<col name="KrajowaStawkaVAT" type="boolean" category="Definicja"
+			description="Określa czy zastosowana zostanie krajowa stawka VAT. Dotyczy tylko dokumentów unijnych."
+			caption="Krajowa stawka VAT"/>
+		<col name="SWW" type="string" length="20" modifier="public virtual" category="Księgowe"
+			description="Numer SWW/PKWiU dla pozycji naliczonej dla obniżonej stawki VAT inicjowany z karty towaru."/>
+		<!-- Mateusz - task 10121 -->
+		<col name="PodstawaZwolnienia" type="string" modifier="public virtual" length="100" category="Księgowe"
+		  description="Podstawa prawna dla zastosowania stawki ZW." />
+		<!-- Mateusz - task 10478 -->
+		<col name="NabywcaPodatnik" type="boolean" category="Dodatkowe" caption="Nabywca podatnik"
+		  description="Sprzedaż opodatkowana po stronie nabywcy." />
+
+		<col name="Cena" type="doublecy" modifier="public virtual" category="Ogólne"
+				description="Cena pozycji może być wyrażona w walucie i może być netto lub brutto.">
+			<verifier name="PozycjaDokHandlowego.MaksymalnyRabatVerifier"/>
+			<verifier name="PozycjaDokHandlowego.MinimalnaCenaVerifier"/>
+			<verifier name="PozycjaDokHandlowego.SumaVATVerifier" onadded="false" />
+		</col>
+		<col name="RabatCeny" type="doublecy" modifier="public virtual" category="Ogólne"
+				description="Rabat pomniejszający kwotę ceny w walucie.">
+			<verifier name="PozycjaDokHandlowego.MaksymalnyRabatVerifier"/>
+			<verifier name="PozycjaDokHandlowego.MinimalnaCenaVerifier"/>
+			<verifier name="PozycjaDokHandlowego.SumaVATVerifier" onadded="false" />
+		</col>
+		<col name="Rabat" type="percent" modifier="public virtual" category="Ogólne"
+				description="Procent rabatu naliczony do ceny lub wartości pozycji.">
+			<verifier name="PozycjaDokHandlowego.MaksymalnyRabatVerifier"/>
+			<verifier name="PozycjaDokHandlowego.MinimalnaCenaVerifier"/>
+			<verifier name="PozycjaDokHandlowego.SumaVATVerifier" onadded="false" />
+		</col>
+		<!-- Mateusz - TASK: 10415 [7.9] -->
+		<col name="BezRabatu" type="boolean" category="Ogólne"
+			 description="Określa czy dla pozycji ma być zastosowany rabat." />
+		<col name="KorektaCeny" type="boolean" category="Ogólne"
+				description="Określa czy cena pozycji została ręcznie zmieniona i nie powinna się już przeliczać." />
+		<col name="KorektaRabatu" type="boolean" category="Ogólne" modifier="public virtual"
+				description="Określa czy rabat pozycji został ręcznie zmieniony i nie powinien się już przeliczać." />
+		<col name="Ilosc" type="Quantity" caption="Ilość" modifier="public virtual" category="Ogólne"
+				description="Podstawowa ilość towaru wprowadzana przez użytkownika, która może być wyrażona w jednostce innej niż podstawowa." >
+			<verifier name="PozycjaDokHandlowego.IlośćZasobuVerifier"/>
+			<verifier name="PozycjaDokHandlowego.SumaVATVerifier" onadded="false" />
+			<verifier name="PozycjaDokHandlowego.IlośćNaKaucjiVerifier" onadded="false" />
+      <verifier name="PozycjaDokHandlowego.PoprawnaJednostkaIlosciZrealizowanejVerifier"/>
+		</col>
+		<col name="IloscMagazynu" type="Quantity" name12="IloscMag" caption="Ilość magazynowa" category="Ogólne"
+			description="Jest to ilość towaru przeliczona na jednostkę magazynową, która powiększa stan magazynu z tytułu tej pozycji. Ilość jest pomniejszona o ilości z relacji do pozycji podrzędnych." />
+		<col name="IloscRezerwowana" type="Quantity" name12="IloscRez" caption="Rezerwacja" category="Ogólne" specialaccess="true"
+			description="Jest to ilość towaru, która jest wykorzystywana podczas rezerwacji towaru na zasobie magazynowym." />
+    <col name="IloscZasobuRezerwowanaValue" type="double" name12="IloscRezVal" specialaccess="true" modifier="internal" readonly="set" />
+		<col name="IloscZasobuValue" type="double" name12="IloscZas"  specialaccess="true" modifier="protected" />
+		<col name="WartoscCy" type="currency" caption="Wartość" category="Ogólne"
+				description="Ostateczna wartość pozycji wyrażona w walucie zależnej od wpisanej waluty ceny." >
+		</col>
+		<col name="Suma" type="BruttoNetto" category="Ogólne"
+			description="Przeliczone na PLN i odpowiednio policzone wartości Netto, Brutto i VAT" />
+		<col name="StatusPozycji" type="StatusPozycji" category="Ogólne"
+			description="Określa status pozycji dokumentu handlowego." />
+
+		<col name="UmowaInfo" type="UmowaInfo" category="Umowy"
+			description="Dane właściwe dla umowy."/>
+		<col name="KompletacjaInfo" type="KompletacjaInfo" category="Kompletacje"
+			 description="Dane właściwe dla kompletacji."/>
+		<!-- TASK: 4371. [6.0] -->
+		<col name="Krotnosc" type="UmowaKrotnosc" category="Umowy" modifier="private"
+			 description="Określa krotności wykonania pozycji umowy." readonly="true">
+			<attribute>Obsolete("Do zastąpienia za pomocą definicji cyklu.")</attribute>
+		</col>
+		<col name="WOkresie" type="UmowaWOkresie" category="Umowy" modifier="private"
+			 description="Określa okres wykonania pozycji umowy." readonly="true">
+			<attribute>Obsolete("Do zastąpienia za pomocą definicji cyklu.")</attribute>
+		</col>
+		<col name="Dzien" type="UmowaDzien" category="Umowy" modifier="private"
+			 description="Określa dzień naliczenia pozycji umowy." readonly="true" >
+			<attribute>Obsolete("Do zastąpienia za pomocą definicji cyklu.")</attribute>
+		</col>
+		<col name="OkresRozliczony" type="FromTo" category="Umowy" modifier="public virtual"
+		  description="Okres jaki rozlicza pozycja." />
+		<col name="DataPrzecenOkresowych" type="date" category="Umowy"
+			 description="Data jaką należy zastosować dla przeceny okresowej na dokumencie rozliczającym umowę." />
+
+		<col name="KodCN" type="string" length="8" category="UE" caption="Kod CN"
+				description="Kod towaru wg Scalonej Nomenklatury Towarowej Handlu Zagranicznego CN. Wymagany dla towarów, którymi handlujemy z kontrahentami z UE.">
+			<!-- Mateusz - zakomentowane w ramach poprawy Intrastatu (task 10544) -->
+			<!-- <verifier name="PozycjaDokHandlowego.MasaNettoUEVerifier" /> -->
+			<attribute>Dictionary("Towary.KodCN")</attribute>
+		</col>
+		<col name="IloscUzupelniajaca" type="Quantity" category="UE" name12="IloscUzp" caption="Ilość uzupełniająca"
+			description="Ilość towaru wyrażona w jednostce uzupełniającej raportowana na deklarcji Intrastat.">
+			<verifier name="PozycjaDokHandlowego.BrakIloUzupNaPozDokIntrVerifier" />
+		</col>
+		<col name="MasaNetto" type="Quantity" category="UE"
+			description="Masa partii towaru, po przeliczeniu na kg raportowana na deklaracji Intrastat.">
+			<!-- Mateusz - zakomentowane w ramach poprawy Intrastatu (task 10544) -->
+			<!-- <verifier name="PozycjaDokHandlowego.MasaNettoUEVerifier" /> -->
+		</col>
+		<col name="MasaBrutto" type="Quantity" category="Ogólne"
+			 description="Masa brutto partii towaru, po przeliczeniu na kg.">
+		</col>
+		<col name="KrajPochodzenia" type="string" length="2" category="UE"
+			description="Kod kraju pochodzenia towarów raportowany na dokumencie Intrastat." />
+		<col name="KrajPrzeznaczenia" type="string" length="2" category="UE" caption="Kraj wys./przezn."
+			description="Kod kraju przeznaczenia przesyłki raportowany na dokumencie Intrastat." />
+		<col name="RodzajTransakcji" type="KodRodzajuTransakcji" category="UE"
+			description="Rodzaj transakcji raportowany na dokumencie Intrastat." />
+		<col name="KosztDodatkowy" type="boolean" category="UE"
+			description="Pozycja ma być traktowana przez księgowość jako koszt dodatkowy podnoszący wartość towarów." />
+
+		<col name="KosztFakturowy" type="decimal" category="UE"
+			description="Dodatkowy koszt doliczany do wartości pozycji raportowany na deklaracji Intrastat." />
+		<col name="KosztStatystyczny" type="decimal" category="UE"
+			description="Dodatkowy koszt doliczany do wartości pozycji w celu wyliczenia wartości statystycznej raportowany na deklaracji Intrastat." />
+		<col name="KosztMagazynowy" type="decimal" category="UE"
+			description="Dodatkowy koszt doliczany do wartości pozycji mogący podnosić watość dokumentów magazynowych." />
+
+    <col name="DoliczajKosztDodatkowy" type="boolean" category="UE" caption="Doliczanie kosztu dodatkowego" description="Doliczanie kosztu dodatkowego." />
+
+		<col name="NumerArkusza" type="string" length="10" category="Inwentaryzacja"
+			description="Numer arkusza inwentaryzacyjnego, w którym została zinwentaryzowana dana pozycja." />
+		<col name="NumerWArkuszu" type="int" category="Inwentaryzacja"
+			description="Numer w arkuszu inwentaryzacyjnym, w którym została zinwentaryzowana dana pozycja." />
+		<col name="Wspolczynnik" type="Fraction" name12="Wsp" caption="Współczynnik" required="true"
+			description="Współczynnik wyliczania jednostki wyliczanej: Wyliczna=Bazowa*Wspolczynnik." />
+		<col name="Urzadzenie" type="UrzadzenieUz" category="Ogólne"
+		  children="Pozycje"
+		  relname="Pozycje urzadzen"
+		  delete="cascade"
+		  keyprimary="false"
+		  description="Urządzenie zawierające tą pozycję">
+			<verifier name="PozycjaDokHandlowego.UrzadzenieJednorazoweVerifier"/>
+		</col>
+		<col name="StanPoczatkowy" type="Quantity" category="Ogólne"
+			 description="Stan początkowy pozycji umowy dostawy towarów." />
+
+		<col name="Flags" type="Helpers.Flags" modifier="protected" category="Ogólne"
+			description="Flagi dodatkowe." />
+
+		<col name="GTIN13" type="string" length="13" category="Ogólne"
+		 description="Kod GTIN-13 (GS1) pozycji towarowej.">
+		</col>
+
+		<col name="SchematOpakowan" type="SchemOpakowan" category="Opakowania"
+			 description="Schemat opakowań używany na dokumentach przychodowych."
+			 important="true" />
+
+    <col name="IloscZrealizowana" type="Quantity" caption="Ilość zrealizowana">
+      <verifier name="PozycjaDokHandlowego.PoprawnaJednostkaIlosciZrealizowanejVerifier"/>
+    </col>
+
+		<!-- SUBROWS -->
+		<col name="ProdukcjaInfo" type="ProdukcjaInfo">
+			<attribute>Browsable(false)</attribute>
+		</col>
+		<col name="ZaliczkaInfo" type="ZaliczkaInfo">
+			<attribute>Browsable(false)</attribute>
+		</col>
+		<col name="ZmianaParametrowZasobuInfo" type="ZmianaParametrowZasobuInfo"
+			 caption="Reguły doboru walut."
+			 description="Ustawienia sposobu doboru walut dla: wartości pozycji, wartości dokumentu lub płatności."/>
+
+		<col name="ParametryRezerwacji" type="ParametryRezerwacji" caption="Parametry rezerwacji zasobu"
+		 description="Parametry rezerwacji zasóbu (w przypadku zamówień algorytmicznych)."
+    />
+
+		<!-- /SUBROWS -->
+	</table>
+
+	<!-- TASK: 4371. [6.0] -->
+	<table name="ElemRozliczenia" tablename="ElemyRozliczenia"
+		  caption="Element rozliczenia pozycji"
+		  tablecaption="Elementy rozliczenia pozycji">
+
+		<key name="WgPozycjaTyp">
+			<keycol name="Pozycja"/>
+			<keycol name="Typ"/>
+		</key>
+
+		<key name="WgDatTypPozycja" keyunique="true">
+			<keycol name="DataOd"/>
+			<keycol name="DataDo"/>
+			<keycol name="Typ"/>
+			<keycol name="Pozycja"/>
+		</key>
+
+		<col name="Pozycja" type="PozycjaDokHandlowego" required="true" readonly="true" category="Dodatkowe"
+				description="Pozycja, której realizacja jest rozbita na elementy."
+				children="ElemyRozliczenia"
+				relname="ElemyRozliczenia"
+				delete="cascade"
+				relguided="inner"
+				relright="true"
+				keyprimary="true"
+		/>
+
+		<col name="DataOd" type="date" category="Ogólne"
+				description="Data rozpoczęcia trwania elementu." />
+		<col name="DataDo" type="date" category="Ogólne"
+		  description="Data zakończenia trwania elementu." />
+		<col name="Typ" type="TypElementuRozliczenia" category="Ogólne"
+		  description="Typ elementu." />
+		<col name="DokumentRozliczajacy" type="DokumentHandlowy" category="Ogólne"
+		  description="Dokument rozliczający pozycję elementu." />
+		<col name="PowodZawieszenia" type="text" category="Ogólne"
+		  description="Powód zawieszenia - opis słowny." />
+		<col name="IloscPlanowana" type="Quantity" category="Ogólne"
+		  description="Ilość planowana do rozliczenia w elemencie." />
+		<col name="IloscZrealizowana" type="Quantity" category="Ogólne"
+		  description="Ilość zrealizowana w elemencie." />
+		<col name="IloscRozliczona" type="Quantity" category="Ogólne"
+		  description="Ilość rozliczona w elemencie." />
+		<col name="StanPoczatkowy" type="Quantity" category="Ogólne"
+		  description="Stan początkowy." />
+		<col name="StanZrealizowany" type="Quantity" category="Ogólne"
+		  description="Stan zrealizowany." />
+		<col name="StanRozliczony" type="Quantity" category="Ogólne"
+		  description="Stan rozliczony." />
+		<col name="DataRealizacji" type="date" category="Ogólne"
+		  description="Data bieżącej realizacji." />
+	</table>
+
+	<table name="MagDefDokRight" tablename="MagDefDokRights" name8="MagDefDk"
+				config="true">
+		<col name="Definicja" type="DefDokHandlowego" keyunique="true"
+			 required="true" delete="cascade"
+			 children="PrawaDoDefinicji"
+			 relname="Przypisane do definicji magazyny."
+			 description="Przypisane do definicji magazyny."
+			 keyprimary="true" >
+			<keycol name="Magazyn" />
+		</col>
+		<col name="Magazyn" type="Magazyn" keyunique="true"
+			 required="true" delete="cascade"
+			 children="PrawaDoMagazynow"
+			 relguided="inner"
+			 relname="Przypisane do magazynu definicje."
+			 description="Przypisane do magazynu definicje.">
+			<keycol name="Definicja"/>
+		</col>
+	</table>
+
+	<subrow name="BruttoNetto">
+		<col name="Netto" type="decimal" description="Wartość netto.">
+			<verifier name="BruttoNetto.ZnakVerifier" />
+			<verifier name="BruttoNetto.SumaVerifier" />
+		</col>
+		<col name="VAT" type="decimal" description="Kwota podateku VAT.">
+			<verifier name="BruttoNetto.ZnakVerifier" />
+			<verifier name="BruttoNetto.SumaVerifier" />
+		</col>
+		<col name="Brutto" type="decimal" description="Wartość brutto.">
+			<verifier name="BruttoNetto.ZnakVerifier" />
+			<verifier name="BruttoNetto.SumaVerifier" />
+		</col>
+	</subrow>
+
+	<subrow name="BruttoNettoCy">
+    <col name="NettoCy" type="currency" readonly="set"
+         description="Kwota netto." />
+    <col name="VatCy" type="currency" readonly="set"
+         description="Kwota podatku VAT."/>
+    <col name="BruttoCy" type="currency" readonly="set"
+         description="Kwota brutto."/>
+	</subrow>
+
+	<table name="DefRelacjiHandlowej" tablename="DefRelHandlowych" name8="DefRelHa"
+		caption="Definicja relacji handlowej" tablecaption="Definicje relacji handlowych"
+		guided="Root" config="true">
+
+		<col name="Typ" type="TypRelacjiHandlowej" category="Zachowanie" required="true" readonly="true"
+			selector="true"
+			description="Określa typ relacji opisujący jej zachowanie" />
+		<col name="Numer" type="int" category="Zachowanie"
+			description="Określa numer relacji podrzędnej w typie." />
+		<col name="Blokada" type="boolean" category="Ogólne"
+			description="Określa zablokowanie relacji. Zablokowane definicje relacji dokumentów nie wpływają na dokumenty." />
+
+		<col name="ZNadrzednego" type="DefRelacjiZ" name12="ZNad" category="Zachowanie"
+			description="Określa zasady tworzenia dokumentów podrzędnych z nadrzędnych.">
+			<keycol name="Numer"/>
+		</col>
+		<col name="ZPodrzednego" type="DefRelacjiZ" name12="ZPod" category="Zachowanie"
+			description="Określa zasady tworzenia dokumentów nadrzędnych z podrzędnych." />
+
+		<col name="DefinicjaNadrzednego" type="DefDokHandlowego" category="Ogólne" modifier="public virtual"
+			caption="Def. dokumentu nadrzędnego"
+			description="Definicja dokumentu nadrzędnego, z którego pochodzi relacja"
+			children="Podrzedne"
+			relname="Definicje podrzędne"
+			delete="cascade"
+      keyprimary="true"
+			required="true" />
+
+		<col name="Zachowanie" type="ZachowanieRelacji" name12="Zach" category="Różne" />
+		<col name="SposobKopiowania" type="SposobKopiowaniaPozycji" category="Różne" modifier="public virtual"
+			description="Określa sposób kopiowania wartości pozycji dokumentów handlowych do dokumentów podrzędnych." />
+    <col name="SposobKopiowaniaKorekta" type="SposobKopiowaniaPozycji" category="Różne" 
+         caption="Wartość pozycji przenoszona na korektę"
+         description="Określa sposób kopiowania wartości pozycji na korekty automatyczne." />
+		<col name="Hidden" type="boolean" category="Ogólne"
+			 description="Określa, czy definicja jest ukryta w menu Relacje." />
+		<col name="Flags" type="Helpers.Flags" modifier="protected" category="Ogólne"
+			 description="Flagi dodatkowe." />
+	</table>
+
+	<subrow name="DefRelacjiZ">
+
+		<col name="Nazwa" type="string" length="30" required="true"
+			description="Nazwa dokumentu widoczna z dokumentu." />
+		<col name="Klawisz" type="CommandShortcut" category="Ogólne"
+			description="Skrót klawiaturowy wywołujący dokument z danej relacji." />
+
+		<col name="AutomatycznieNowy" type="boolean"
+			description="Dokument zależny jest tworzony automatycznie dla nowego dokumentu." />
+		<col name="PodczasZatwierdzaniaNowy" type="boolean"
+			description="Dokument zależny jest tworzony automatycznie podczas zatwierdzania dokumentu." />
+		<col name="Recznie" type="boolean"
+			description="Dokument zależny może być tworzony ręcznie dla dokumentów w buforze." />
+		<col name="RecznieZatwierdzony" type="boolean"
+			description="Dokument zależny może być tworzony ręcznie dla zatwierdzonych dokumentów." />
+		<col name="NowyDokument" type="boolean"
+			description="Możliwość tworzenia nowego dokumentu zależnego." />
+		<col name="IstniejacyDokument" type="boolean"
+			description="Możliwość dołączania istniejących dokumentów zależnych." />
+		<col name="WieleDokumentow" type="boolean" modifier="public virtual"
+			description="Możliwość tworzenia lub dołączania wielu dokumentów zależnych." />
+                <col name="DlaKorygowanego" type="boolean" modifier="public virtual"
+                        description="Możliwość tworzenia nadrzędnego korygowanego." />
+
+		<col name="Kasowanie" type="KasowanieRelacji"
+			description="Zachowanie dokumentu zależnego podczas kasowania dokumentu." />
+
+	</subrow>
+
+	<subrow name="ZachowanieRelacji">
+
+		<col name="PrzenoszenieIlosci" type="SposobPrzenoszeniaIlosci" category="Pozycje"
+		description="Określa sposób przenoszenia ilości i wartości do podrzędnej pozycji dokumentu." />
+		<col name="FiltrTowarow" type="TypFiltruTowaru" category="Pozycje"
+			description="Określa jakie pozycje towarów mają być przenoszone do dokumentów podrzednych." />
+    <col name="SposobFiltrowaniaPozycji" type="SposobFiltrowaniaPozycjiDokumentuNadrzednego" />
+    <col name="FiltrPozycji" type="string" length="250" category="Pozycje" modifier="public virtual"/>
+		<col name="FiltrPozycjiTechnologii" type="FiltrPozycjiTechnologii" modifier="public virtual"
+         category="Pozycje"
+         description="Określa jakie pozycje technologii mają być przenoszone do dokumentów podrzednych." />
+    <col name="AutomatyczniePrzeliczajKosztWytworzenia" type="boolean" />
+		<col name="ZrodloNazwyTowaru" type="ZrodloDanychPrzyPrzeksztalcaniu" category="Pozycje"
+			caption="Zródło nazwy towaru"
+			description="Określa skąd pobierana ma być nazwa towaru na pozycje." />
+		<col name="ZastepowanieProduktowSkladnikami" type="boolean" category="Pozycje" modifier="public virtual"
+			 description="Określa, czy w relacji kopiowania produkt na pozycji nadrzędnej zostanie zastąpiony składnikami na pozycji podrzędnej." />
+		<col name="WyliczanieIlosci" type="SposobWyliczaniaIlosci" category="Pozycje"
+				description="Określa sposób wyliczania ilości przenoszonej do podrzędnej pozycji dokumentu." />
+		<col name="LaczeniePozycji" type="SposobLaczeniaPozycji" category="Pozycje" modifier="public virtual"
+						description="Określa reguły łączenia wielu pozycji z dokumentu nadrzędnego w dokumencie podrzędnym." />
+		<col name="CechaLaczenia" type="string" length="30" category="Pozycje"
+				description="Cecha wykorzystywana podczas łączenia pozcyji na dokumencie podrzędnym.">
+			<attribute>ControlEdit(ControlEditKind.ComboBox)</attribute>
+		</col>
+		<col name="ZasobyZNadrzednego" type="boolean" category="Pozycje" modifier="public virtual"
+				caption="Zasoby z nadrzędnego"
+				description="Na pozycji podrzędnego powstaje wskazanie dostawy i pobierany jest zasób utworzony przez pozycję nadrzędnego.">
+		</col>
+		<col name="SynchroniujStan" type="boolean" category="Nagłówek"
+			 description="Określa, czy dokumenty będące w relacji mają być jednocześnie otwierane i zamykane (zmiana stanu dokumentu)." />
+		<col name="Kontrahent" type="SposobPrzenoszeniaKontrahenta" category="Nagłówek"
+						description="Określa sposób przenoszenia kontrahenta z dokumentu nadrzędnego do dokuemntu podrzędnego." />
+		<col name="DaneKontrahentaZKarty" type="boolean" category="Nagłówek"
+					 description="Określa, czy dane kontrahenta mają być pobierane z kartoteki czy z dokumentu nadrzędnego." />
+		<col name="VatWgPodrzednego" type="boolean" category="Nagłówek"
+			description="Określa, czy VAT będzie liczony wg ustawień w definicji dokumentu podrzędnego, jeśli metoda liczenia VAT w dokumencie nadrzędnym jest inna niż w definicji dokumentu podrzędnego." />
+		<col name="KopiujOpis" type="KopiujOpis" category="Nagłówek"
+					description="Wymusza kopiowanie opisu dokumentu z dokumentu nadrzędnego do podrzędnego." />
+		<col name="KopiujNumerObcy" type="boolean" category="Nagłówek"
+					description="Wymusza kopiowanie numeru obcego z dokumentu nadrzędnego do podrzędnego." />
+		<col name="UsuwajAutomatycznie" type="boolean" category="Nagłówek"
+					 description="Określa, czy relacja kopiowania będzie rozłączana na zatwierdzenie dokumentu podrzędnego, gdy ten nie rozlicza nadrzędnego." />
+		<col name="DataDokumentu" type="SposobPrzenoszeniaDaty" category="Przenoszenie dat"
+						description="Sposób inicjowania daty dokumentu podrzędnego z dokumentu nadrzędnego." />
+		<col name="DataOperacji" type="SposobPrzenoszeniaDaty" category="Przenoszenie dat"
+			description="Sposób inicjowania daty operacji dokumentu podrzędnego z dokumentu nadrzędnego." />
+		<col name="DataObcy" type="SposobPrzenoszeniaDaty" category="Przenoszenie dat"
+			description="Sposób inicjowania daty obcej dokumentu podrzędnego z dokumentu nadrzędnego." />
+		<col name="DataKursu" type="SposobPrzenoszeniaDaty" category="Przenoszenie dat"
+			description="Sposób inicjowania daty kursu dokumentu podrzędnego z dokumentu nadrzędnego." />
+		<col name="DataDostawy" type="SposobPrzenoszeniaDaty" category="Przenoszenie dat"
+			description="Sposób inicjowania daty dostawy dokumentu podrzędnego z dokumentu nadrzędnego." />
+		<col name="DowolnaData" type="boolean" category="Przenoszenie dat"
+			description="Określa, czy data dokumentu podrzędnego może być wcześniejsza niż dokumentu nadrzędnego." />
+		<col name="KopiujCechyDokumentu" type="boolean" category="Przenoszenie cech"
+				description="Wymusza kopiowanie cech dokumentu z dokumentu nadrzędnego do podrzędnego." />
+		<col name="KopiujCechyPozycji" type="boolean" category="Przenoszenie cech"
+				description="Wymusza kopiowanie cech pozycji z dokumentu nadrzędnego do podrzędnego." />
+		<col name="BezKorektyMagazynu" type="boolean" category="Inne"
+			description="Relacja nie przenosi informacji o korekcie dokumentu magazynowego (np KFVP->FVP->PAR->WZ->KWZ)." />
+    <col name="AutomatycznaKorektaWgPodrzednego" type="boolean" category="Inne"
+         caption="Automatycznie generuj korektę dokumentu magazynowego po zmianie wartości handlowego"
+         description="Generuje korektę magazynowego, której celem jest synchronizacja wartości zapisów magazynowych z wartością dokumentu handlowego." />
+		<col name="KorektaWartosci" type="boolean"
+			description="Wartość dokumentu nadrzędnego wpływa na wartość podrzędnego (dotyczy również sum VAT)." />
+		<col name="DziedziczyUstawienia" type="boolean"
+			description="Pewne ustawienia dokumentu nie zależą od definicji, tylko od dokumentu nadrzędnego." />
+		<!--col name="Podmiot" type="RelacjaKontrahenta"
+			description="Określa sposób przenoszenia podmiotu pomiędzy dokumentem nadrzędnym i podrzędnym." /-->
+		<col name="BlokujOtwarcie" type="boolean"
+			description="Blokuje otwarcie zamkniętego dokumentu nadrzędnego, dopóki istnieje relacja." />
+		<col name="WielePozycji" type="boolean"
+			description="Określa, czy do jednej pozycji nadrzędnej może istnieć wiele pozycji podrzędnych." />
+		<col name="OgraniczDoStanu" type="boolean"
+			description="Ogranicza ilość kopiowanego towaru tylko do ilości dostępnej na stanie magazynowym." >
+			<!-- TASK: 2401. [4.3] -->
+			<attribute>Obsolete(@"Przeniesiono do definicji dokumentu. DefDokumentuHandlowego.OgraniczDoStanu")</attribute>
+		</col>
+		<col name="WyborPozycji" type="WyborPozycjiDlaRelacji"
+				description="Określa formularz wyświetlany podczas tworzenia dokumentu podrzędnego, w którym można wybrać dodatkowe informacje o dokumencie podrzędnym." />
+		<!-- TASK: 3360 [5.1] -->
+		<col name="PomniejszajIloscZarezerwowana" name12="PomIloZarez" type="boolean" caption="Pomniejszaj ilość zarezerwowaną"
+			 description="Określa czy na dokumencie ma być pomniejszana ilość zarezerwowana z dokumentu podrzędnego." />
+		<col name="WalutaPozycjiJakDokumentu" type="boolean" readonly="set" modifier="public virtual"
+			 description="Określa, czy waluta pozycji dokumentu będzie przeliczana na walutę podsumowania dokumentu.">
+			<attribute>Obsolete("Zastąpiono mechanizmem inicjalizacji waltuy.")</attribute>
+			<attribute>Browsable(false)</attribute>
+		</col>
+    <col name="KopiujSerie" type="ZrodloDanychPrzyPrzeksztalcaniu" caption="Przenoszenie serii" description="Sposób przenoszenia serii."/>
+		<!-- SUBROWS -->
+		<col name="InicjalizatorStawkiVatInfo" type="InicjalizatorStawkiVatDefRelacjiInfo"
+			 caption="Reguły inicjacji stawki VAT."
+			 description="Ustawienia inicjacji stawki VAT dla pozycji podrzędnego w relacji."/>
+		<col name="InicjalizatorWalutyInfo" type="InicjalizatorWalutyInfo"
+			 caption="Reguły doboru walut."
+			 description="Ustawienia sposobu doboru walut dla: wartości pozycji, wartości dokumentu lub płatności."/>
+		<!-- /SUBROWS -->
+	</subrow>
+
+	<subrow name="InicjalizatorStawkiVatDefRelacjiInfo">
+		<col name="ZrodloStawkiVat" type="ZrodloStawkiVat"
+			 description="Wskazuje na źródło stawki VAT dla pozycji podrzędnej w relacji." />
+	</subrow>
+
+	<subrow name="InicjalizatorWalutyInfo">
+		<col name="WalutaPlatnosci" type="ZrodloWaluty"
+			 description="Wskazuje na źródło pozyskania waluty dla podsumowania/płatności dokumentu podrzędnego." />
+		<col name="WalutaPozycji" type="ZrodloWaluty"
+			 description="Wskazuje na źródło pozyskania waluty dla wartości pozycji dokumentu podrzędnego." />
+		<col name="KursWaluty" type="ZrodloKursuWaluty"
+			 description="Wskazuje na źródło pozyskania kursu waluty." />
+	</subrow>
+
+	<table name="RelacjaHandlowa" tablename="RelacjeHandlowe"
+		guided="Root">
+
+		<key keyunique="false" name="WgPodrzednyTyp">
+			<keycol name="Podrzedny"/>
+			<keycol name="Typ"/>
+		</key>
+
+		<!-- Mateusz - zmiana kaucji -->
+		<key keyunique="false" name ="WgNadrzednyPodrzedny">
+			<keycol name="Nadrzedny"/>
+			<keycol name="Podrzedny"/>
+		</key>
+
+		<col name="Definicja" type="DefRelacjiHandlowej" category="Ogólne"
+			description="Definicja opisująca zachowanie relacji"
+			required="true" readonly="true"
+			 keyprimary="true" />
+
+		<col name="Typ" type="TypRelacjiHandlowej" category="Zachowanie" required="true" readonly="true" selector="true"
+			description="Określa typ relacji opisujący jej zachowanie" />
+
+		<col name="Glowna" type="boolean" category="Ogólne" caption="Główna"
+			description="Wskazuje, że dla tej relacji będą wykonywane wszystkie automatyczne operacje." />
+		<col name="Rozliczenie" type="RozliczenieRelacji" category="Ogólne" readonly="set" specialaccess="true"
+			description="Określa jaka część dokumentu nadrzędnego została już rozliczona." />
+		<col name="RozliczenieKoncowy" type="RozliczenieRelacji" category="Ogólne" readonly="set" specialaccess="true"
+				 description="Określa jaka część dokumentu nadrzędnego została już rozliczona dokumentem końcowym." />
+
+		<col name="Nadrzedny" type="DokumentHandlowy" category="Ogólne"
+			caption="Dokument nadrzędny"
+			description="Nadrzędny dokumenty relacji handlowej."
+			children="PodrzedneRelacje"
+			relname="Relacje podrzędne"
+			relright="true"
+			required="true" readonly="set">
+			<keycol name="Definicja"/>
+		</col>
+		<col name="Podrzedny" type="DokumentHandlowy" category="Ogólne"
+			caption="Dokument podrzędny"
+			description="Podrzędny dokumenty relacji handlowej."
+			children="NadrzedneRelacje"
+			relname="Relacje nadrzędne"
+			relright="true"
+			required="true" readonly="true">
+			<keycol name="Definicja"/>
+		</col>
+
+		<col name="DefinicjaStawki" type="DefinicjaStawkiVat" category="Zaliczka" readonly="set" caption="Stawka pozycji"
+			description="Definicja stawki VAT naliczonej do tej relacji (zaliczki)." />
+		<col name="DefinicjaStawkiZaliczki" type="DefinicjaStawkiVat" category="Zaliczka" readonly="set" caption="Stawka zaliczki"
+			description="Definicja stawki VAT zaliczki naliczonej do tej relacji (zaliczki)." />
+		<col name="Suma" type="BruttoNetto" category="Zaliczka" readonly="set"
+			description="Przeliczone na PLN i odpowiednio policzone wartości Netto, Brutto i VAT dla tej relacji (zaliczki)." />
+		<col name="Wartosc" type="currency" category="Zaliczka" readonly="false" modifier="public virtual"
+			 />
+		<col name="Stornowana" type="boolean" category="Zaliczka" modifier="internal"
+			 />
+		<col name="SposobUtworzenia" type="SposobUtworzeniaRelacjiHandlowej" modifier="internal" category="Ogólne"
+			 description="Pole techniczne wskazujące na szczególny mechanizm powodujący relację handlową." />
+		<col name="Flags" type="Helpers.Flags" modifier="protected" category="Ogólne"
+			 description="Flagi dodatkowe." />
+	</table>
+
+	<table name="PozycjaRelacjiHandlowej" tablename="PozRelHandlowej"
+		caption="Pozycja relacji handlowej" tablecaption="Pozycja relacji handlowej">
+
+		<col name="Relacja" type="RelacjaHandlowa" required="true" readonly="true" category="Ogólne"
+			children="Pozycje"
+			relname="Pozycje relacji"
+			delete="cascade"
+			relguided="inner"
+			relright="true"
+			keyprimary="true"
+			description="Relacja zawierająca tę pozycje"
+		/>
+
+		<!-- Mateusz - dla kaucji -->
+		<key name="WgRelacjaNadrzednaPodrzednaIdent" keyunique="true" keyprimary="false">
+			<keycol name="Relacja"/>
+			<keycol name="NadrzednaIdent"/>
+			<keycol name="PodrzednaIdent"/>
+      <keycol name="ProdukcjaInfo.IdentyfikatorElementuPowiazanego"/>
+		</key>
+
+		<col name="NadrzednaIdent" type="int" category="Ogólne" required="true" readonly="set" batchfield="false" />
+		<col name="PodrzednaIdent" type="int" category="Ogólne" required="true" readonly="true" batchfield="false" />
+
+		<col name="NadrzednyDok" type="DokumentHandlowy" category="Ogólne"
+			caption="Dokument nadrzędny"
+			description="Nadrzędny dokumenty relacji handlowej"
+			children="PodrzednePozycje"
+			relname="Relacje podrzędne"
+			required="true" readonly="set">
+			<keycol name="NadrzednaIdent" />
+		</col>
+		<col name="PodrzednyDok" type="DokumentHandlowy" category="Ogólne"
+			caption="Dokument podrzędny"
+			description="Podrzędny dokumenty relacji handlowej"
+			children="NadrzednePozycje"
+			relname="Relacje nadrzędne"
+			required="true" readonly="true">
+			<keycol name="PodrzednaIdent" />
+		</col>
+		<col name="Ilosc" type="Quantity" caption="Ilość relacji"
+			description="Ilość towaru przenoszonego do pozycji podrzędnej." />
+		<col name="IloscMagazynu" type="Quantity" name12="IloscMag" caption="Ilość magazynowa relacji"
+			description="Ilość towaru przenoszonego do pozycji podrzędnej wyrażona w jednostkach magazynowych." />
+		<col name="Wartosc" type="currency" caption="Wartość relacji"
+			description="Wartość towaru przenoszonego do pozycji podrzędnej." />
+		<col name="Dodatkowa" type="boolean" readonly="true"
+			description="Pozycja dodatkowa dodana ręcznie do listy relacji." />
+
+		<col name="Suma" type="BruttoNetto" category="Zaliczka"
+			description="Przeliczone na PLN i odpowiednio policzone wartości Netto, Brutto i VAT dla tej pozycji relacji." />
+
+		<!-- SUBROWS -->
+		<col name="ProdukcjaInfo" type="ProdukcjaInfo">
+			<attribute>Browsable(false)</attribute>
+		</col>
+		<!-- /SUBROWS -->
+	</table>
+
+	<!-- TASK: 4371. [6.0] -->
+	<table name="DefUrzadzeniaUz" tablename="DefUrzadzenUz" name8="DefUrzUz" guided="Root" config="true"
+	 caption="Definicja urządzenia użytkowanego"
+	 tablecaption="Definicje urządzeń użytkowanych">
+
+		<!--<interface>IRightsSource</interface>-->
+
+		<key name="WgSymbolu" keyunique="true" keyprimary="true">
+			<keycol name="Symbol" />
+		</key>
+		<key name="WgNazwy" keyunique="true">
+			<keycol name="Nazwa" />
+		</key>
+
+		<col name="Symbol" type="string" length="12" required="true" category="Ogólne" important="true"
+				description="Skrótowa nazwa definicji urządzenia wykorzystywana do wyszukiwania definicji." />
+		<col name="Nazwa" type="string" length="30" required="true" category="Ogólne" important="true"
+				description="Pełna nazwa definicji urządzenia wykorzystywana do wyszukiwania deifnicji." />
+		<col name="Blokada" type="boolean" category="Ogólne"
+				description="Określa zablokowanie definicji. Zablokowane definicje urządzeń nie będą wyświetlane w liście wyboru." />
+		<col name="DefFormatki" type="text" category="Ogólne"
+		  description="Określa definicję definiowalnej formatki urządzenia w postaci XML."/>
+	</table>
+
+	<!-- TASK: 4371. [6.0] -->
+	<table name="UrzadzenieUz" tablename="UrzadzeniaUz" guided="Exported"
+	tablecaption="Urządzenia użytkowane" caption="Urządzenie użytkowane">
+
+		<key name="WgIdentyfikator">
+			<keycol name="Identyfikator" />
+		</key>
+
+		<col name="Identyfikator" type="string" required="true" category="Ogólne" important="true" length="80"
+				description="Identyfikator urządzenia." />
+
+		<col name="Definicja" type="DefUrzadzeniaUz" category="Ogólne"
+				description="Definicja urządzenia."
+				required="true"
+				relname="Definicja urządzenia"
+			 keyprimary="true">
+			<!--relright="true"-->
+			<!--<keycol name="Identyfikator"/>-->
+			<attribute>Context</attribute>
+		</col>
+
+		<col name="Nazwa" type="string" length="100" category="Ogólne"  description="Nazwa urządzenia."/>
+
+		<col name="Opis" type="text" description="Opis urządzenia."/>
+
+	</table>
+
+	<table name="RelacjaZaliczki" tablename="RelacjeZaliczek" warnings="Off">
+		<col name="Dokument" type="DokumentHandlowy" category="Ogólne"
+			caption="Dokument handlowy"
+			description="Dokument handlowy dla zaliczki"
+			children="Zaliczki"
+			relname="Dokumenty zaliczek"
+			relright="true"
+			delete="cascade"
+			required="true" readonly="true"
+			 keyprimary="true">
+		</col>
+		<col name="Zaplata" type="Zaplata" category="Ogólne"
+			caption="Zapłata"
+			description="Zaplata dla zaliczki"
+			children="Zaliczki"
+			relname="Zapłaty zaliczek"
+			required="true" readonly="true">
+		</col>
+		<col name="Typ" type="TypyRelacjiZaliczek" required="true"/>
+		<col name="Kwota" type="currency" required="true"/>
+	</table>
+
+  <table name="KontrahentKomunikatEDI" tablename="KontrahKonEDI" tablecaption="Komunikaty EDI dla kontrahenta">
+    <col name="Kontrahent" type="Kontrahent" category="Ogólne" caption="Kontrahent" relname="KomunikatyEDI"
+         delete="cascade" keyprimary="true" keyunique="true"
+         children="KomunikatyEDI"
+         >
+      <keycol name="Komunikat"/>
+    </col>
+    <col name="DefinicjaEDI" type="DefXmlNag" category="Ogólne" caption="Definicja komunikatu." />
+    <col name="Komunikat" type="RodzajDefXml" category="Ogólne" caption="Rodzaj komunikatu."/>
+    <col name="Generowanie" type="GenerowanieEdi" category="Ogólne" caption="Sposób generowania" description="Sposób generowania komunikatu."/>
+    <col name="Wysylanie" type="WysylanieEdi" category="Ogólne" caption="Sposób wysyłania" description="Sposób wysyłania komunikatu."/>
+    <col name="Serwer" type="string" length="32" category="Ogólne" caption="Adres IP,Port" description="Adres IP oraz port serwera (domyślny port 22003)"/>
+  </table>
+
+  <interface name="IPulpitHost"/>
+
+  <table name="PulpitHost" tablename="PulpityHost" tablecaption="Obiekty wykorzystywane w pulpitach">
+    <key name="WgTyp" keyprimary="true">
+      <keycol name="Dla"/>
+      <keycol name="Typ"/>
+    </key>
+    <col name="Host" type="IPulpitHost" required="true" keyunique="true">
+      <keycol name="Dla"/>
+    </col>
+
+    <col name="Typ" type="PulpitHostTyp">
+      <attribute>Context</attribute>
+    </col>
+    <col name="Dla" type="PulpitHostDla">
+      <attribute>Context</attribute>
+    </col>
+  </table>
+
+  <table name="DrukarkaFiskalna" tablename="DrukarkiFiskalne" tablecaption="Lista drukarek fiskalnych" config="true" guided="Root">
+    <key name="WgNazwy" keyprimary="true" keyunique="true">
+      <keycol name="Nazwa"/>
+    </key>
+    <col name="Nazwa" type="string" length="64" required="true"/>
+    <col name="Domyslna" type="boolean"/>
+
+    <col name="Drukarka" type="string" length="64" required="true"/>
+    <col name="Port" type="string" length="64"/>
+    <col name="SprzedazNiefiskalna" type="boolean"/>
+    <col name="SymbolKasy" type="string" length="64" required="true"/>
+    <col name="TSFP" type="boolean"/>
+    <col name="MinDlugoscNazwy" type="int"/>
+    <col name="MinDlugoscIlosci" type="int"/>
+    <col name="DrukujNumer" type="boolean"/>
+    <col name="PrzesylajNaLCD" type="boolean"/>
+    <col name="TekstReklamowy" type="string" length="64"/>
+    <col name="ElzabTD" type="ElzabTekstDodatkowy"/>
+    <col name="USB" type="boolean"/>
+    <col name="Logowanie" type="boolean"/>
+    <col name="DodawajStawkeVATDoNazwy" type="boolean"/>
+    <col name="DrukujJednostkiNaPozycji" type="boolean"/>
+    <col name="ZaawansowaneZatwierdzanie" type="boolean"/>
+    <col name="DrukujRabatNaPozycji" type="boolean"/>
+    <col name="TekstReklamowyCecha" type="string" length="64"/>
+    <col name="NumerRejestracyjny" type="string" length="64"/>
+    <col name="NumerZamowienia" type="string" length="64"/>
+    <col name="OsobaZamawiajaca" type="string" length="64"/>
+    <col name="NumerKlienta" type="string" length="64"/>
+    <col name="WarunkiDostawy" type="string" length="64"/>
+    <col name="SposobDostawy" type="string" length="64"/>
+    <col name="Uwagi" type="string" length="64"/>
+
+    <col name="IloscZnakowNazwy" type="int" />
+    <col name="CechaNazwyTowaru" type="string" length="64" />
+    <col name="FiskalizujNPJakoZW" type="boolean" />
+    <col name="DrukujSposobZaplaty" type="boolean" />
+
+    <col name="TrybSerwera" type="boolean" />
+
+    <col name="MapowanieStawekVat" type="MapowanieStawekVat" description="Rodzaj mapowania stawek Vat." />
+
+    <col name="StawkaA" type="DefinicjaStawkiVat" description="Stawka przypisana do rejestru A." /> 
+    <col name="StawkaB" type="DefinicjaStawkiVat" description="Stawka przypisana do rejestru B." />
+    <col name="StawkaC" type="DefinicjaStawkiVat" description="Stawka przypisana do rejestru C." />
+    <col name="StawkaD" type="DefinicjaStawkiVat" description="Stawka przypisana do rejestru D." />
+    <col name="StawkaE" type="DefinicjaStawkiVat" description="Stawka przypisana do rejestru E." />
+    <col name="StawkaF" type="DefinicjaStawkiVat" description="Stawka przypisana do rejestru F." />
+    <col name="StawkaG" type="DefinicjaStawkiVat" description="Stawka przypisana do rejestru G." />
+
+    <col name="Adres" type="string" length="32"/>
+  </table>
+
+  <table name="DrukarkaFiskalnaStanowisko" tablename="DrukFiskStan" tablecaption="Lista drukarek przypisanych do stanowiska" config="true" name8="DrukFS" >
+    <key name="WgStanowisko" keyprimary="true" keyunique="true">
+      <keycol name="Stanowisko"/>
+    </key>
+    <col name="Stanowisko" type="string" length="64" required="true" category="Ogólne"/>
+    <col name="Drukarka" type="DrukarkaFiskalna" required="true" children="Stanowiska" category="Ogólne" relname="DrukarkaFiskalnaStanowisko">
+      <attribute>Context</attribute>
+    </col>
+  </table>
+
+  <interface name="IZrodloKosztuDodatkowego"/>
+  <table name="DokumentHandlowyKoszt" tablename="DokHandloweKoszt" tablecaption="Koszty dodatkowe">
+    <col name="Dokument" type="DokumentHandlowy" required="true" relname="Koszty dodatkowe" delete="cascade" keyprimary="true" 
+         children="KosztyDodatkowe" relright="true">
+      <attribute>Context</attribute>
+    </col>
+    <col name="ZrodloKosztu" type="IZrodloKosztuDodatkowego" required="false" />
+    <col name="Fakturowy" type="boolean" caption="Koszt fakturowy" description="Wartość doliczana do kosztu fakturowego." />
+    <col name="Magazynowy" type="boolean" caption="Koszt magazynowy" description="Wartość doliczana do kosztu magazynowgo." />
+    <col name="Statystyczny" type="boolean" caption="Koszt statystyczny" description="Wartość doliczana do kosztu statystycznego." />
+    <col name="Kwota" type="currency" caption="Kwota kosztu" description="Kwota kosztu."/>
+    <col name="Opis" type="string" length="255" caption="Opis" description="Opis kosztu."/>
+    <col name="Aktywny" type="boolean" caption="Aktywność kosztu" description="Określa, czy koszt dodatkowy jest aktywny."/>
+    <col name="KosztNadrzedny" type="DokumentHandlowyKoszt" caption="Koszt nadrzędny" description="Koszt nadrzędny."/>
+  </table>
+  
+  <enum name="CommandShortcut" />
+	<enum name="CzestotliwoscRozliczania" />
+	<enum name="DataOkresIntrastat"/>
+	<enum name="DefDataKursu"/>
+	<enum name="DostepnoscMenadzeraRozliczen"/>
+  <enum name="EDokumentStatus" />
+    <enum name="EDokumentRodzaj" />
+    <enum name="EdycjaDatyDostawy"/>
+	<enum name="EdycjaWartosciDokumentu" />
+        <enum name="EdycjaWTrybieKoszyka" />
+	<enum name="FiltrKontrahentaStosowanie" />
+	<enum name="FiltrPozycjiTechnologii"/>
+	<enum name="FiltrStanuTowaru"/>
+	<enum name="Helpers.Flags" />
+	<enum name="IloscTowaruKopiowana"/>
+    <enum name="InicjalizacjaDatyDostawy"/>
+	<enum name="KasowanieRelacji" />
+	<enum name="KategoriaHandlowa"/>
+	<enum name="KodKreskowyZNumeremDok"/>
+	<enum name="KodRodzajuTransakcji" />
+	<enum name="KodRodzajuTransportu" />
+	<enum name="KopiujOpis" />
+	<enum name="KursWgDaty"/>
+	<enum name="LimitWartosciTyp"/>
+	<enum name="LimitWartosciReakcjaZatwierdzanie"/>
+	<enum name="MomentMagazynu" />
+	<enum name="NazwaTowaruNaPozycji" />
+	<enum name="OkreslenieDatyZaplaty" />
+	<enum name="OkreslenieKontrahenta" />
+	<enum name="ParametryWydrukuMonit"/>
+	<enum name="PotwierdzenieDokumentuHandlowego" />
+	<enum name="RelacjaKontrahenta" />
+	<enum name="RelacjaTworzonaGdy" />
+	<enum name="RodzajDaty" />
+	<enum name="RodzajDefXml"/>
+	<enum name="RodzajIntrastat" />
+	<enum name="RodzajUmowy" />
+	<enum name="RodzajWydruku"/>
+	<enum name="RodzajWydrukuFiskalnego"/>
+	<enum name="RozliczenieRelacji" />
+	<enum name="SposobAktualizacjiCen" />
+	<enum name="SposobBuforowania" />
+	<enum name="SposobDodawaniaHandlowego" />
+	<enum name="SposobEdycjiKompletacji" />
+  <enum name="SposobFiltrowaniaPozycjiDokumentuNadrzednego" />
+	<enum name="SposobKopiowaniaPozycji" />
+	<enum name="SposobLaczeniaPozycji" />
+	<enum name="SposobLiczeniaVAT" />
+	<enum name="SposobLiczeniaSumVAT" />
+	<enum name="SposobPrzenoszeniaDaty" />
+	<enum name="SposobPrzenoszeniaIlosci" />
+	<enum name="SposobPrzenoszeniaKontrahenta" />
+	<enum name="SposobPrzenoszeniaZaliczki" />
+	<enum name="SposobRozliczaniaNadrzednego" />
+	<enum name="SposobUtworzeniaRelacjiHandlowej" />
+	<enum name="SposobWyliczaniaIlosci" />
+	<enum name="SprzedazPonizejCenyMinimalnej" />
+	<enum name="StanDokumentuHandlowego" />
+	<enum name="StatusPozycji"/>
+	<enum name="SzybkaTransakcjaTowarPodlista" />
+	<enum name="TerminPłatnościLiczonyOd"/>
+	<enum name="TowarWgDostawcy" />
+	<enum name="TypDatyRezerwacji"/>
+	<enum name="TypDokumentuHandlowego"/>
+	<enum name="TypElementuRozliczenia" />
+	<enum name="TypFiltruKontrahenta" />
+	<enum name="TypRelacjiHandlowej" />
+	<enum name="TypTerminuRozliczenia" />
+	<enum name="TypUmowy" />
+	<enum name="TypyRelacjiZaliczek"/>
+	<enum name="UmowaDzien" />
+	<enum name="UmowaKrotnosc" />
+	<enum name="UmowaWOkresie" />
+	<enum name="WarunkiDostawy" />
+	<enum name="WyborPartiiOpcje"/>
+	<enum name="WyborPartiiPrzedmiot"/>
+	<enum name="WyborPozycjiDlaRelacji" />
+	<enum name="WyborStawkiVAT" />
+	<enum name="WyborTowaru" />
+	<enum name="WymaganieKontrahenta"/>
+	<enum name="ZmianaMarzy" />
+	<enum name="ZmianaWartosciPozycji" />
+	<enum name="ZachowaniePoPrzekroczeniuLimituKredytowego"/>
+	<enum name="ZrodloDanychPrzyPrzeksztalcaniu" />
+	<enum name="ZrodloEwidencji" />
+	<enum name="ZrodloStawkiVat"/>
+	<enum name="ZrodloKursuWaluty"/>
+	<enum name="ZrodloWaluty"/>
+	<enum name="GenerowanieEdi" />
+	<enum name="WysylanieEdi" />
+  <enum name="PulpitHostTyp"/>
+  <enum name="PulpitHostDla"/>
+  <enum name="ElzabTekstDodatkowy"/>
+  <enum name="PodzialKosztuDodatkowego"/>
+  <enum name="MapowanieStawekVat"/>
+  <enum name="TworzenieOpisuEwidencji"/>
+  <enum name="EdycjaStanuRealizacji"/>
+  <enum name="EdycjaIlosciZrealizowanej"/>
+  <enum name="StanRealizacji"/>
+  <enum name="WynikRealizacji"/>
+  <enum name="EDokumentArchiwum"/>
+</module>

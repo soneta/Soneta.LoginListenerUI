@@ -1,0 +1,108 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<module xmlns="http://www.enova.pl/schema/business_struct.xsd" name="Snapshots" namespace="Soneta.Business.Snapshots"
+        versionName="snapshots" versionNumber="10000" snapshotsDb="true">
+
+  <import>..</import>
+  <using>Soneta.Config</using>
+  <using>Soneta.Business.Db</using>
+
+  <table name="System2Info" tablename="System2Infos" name8="Sys2Infs" guided="None" caption="Informacja systemowa 2">
+    <key name="ByIdent" keyprimary="true" keyunique="true">
+      <keycol name="Ident"/>
+    </key>
+    <col name="Ident" type="SysInfoIdentifier" required="true" readonly="true"/>
+    <col name="Value" type="string" length="40"/>
+    <col name="Data" type="text" />
+  </table>
+
+  <table name="SnapshotDefinition" tablename="SnapshotDefs" guided="Root" 
+         caption="Definicja zdjęcia tabeli" tablecaption="Definicje zdjęć tabeli">
+
+    <key name="ByCategory" keyunique="true">
+      <keycol name="SourceTable" />
+      <keycol name="Category" />
+      <keycol name="Name" />
+    </key>
+    
+    <col name="Parent" type="SnapshotDefinition" 
+      category="Ogólne" description="Zdjęcie nadrzędne do aktualnego"
+      readonly="true"
+			relname="Snaphot definition parent" reldefault="true" children="Children"
+			keyprimary="true" keyunique="true"
+		>
+      <keycol name="DbName"/>
+    </col>
+    <col name="Name" type="string" length="30" required="true" important="true" modifier="public virtual"
+			category="Ogólne" caption="Nazwa" description="Nazwa zdjęcia tabeli"/>
+    <col name="Description" type="string" length="80" 
+			category="Ogólne" caption="Opis" description="Opis objaśniający zawartość zdjęcia"/>
+    <col name="Category" type="string" length="80"
+			category="Ogólne" caption="Kategoria" description="Kategoria informująca o grupach zdję przypisanych do poszczególnych widoków."/>
+
+    <col name="SourceTable" type="string" length="16" required="true" 
+      category="Definicja" caption="Klasa źródła" description="Klasa obiektu źródłowego"/>
+    <col name="DbName" type="string" length="30" readonly="set" required="true" 
+			category="Definicja" caption="Nazwa tabeli" description="Nazwa tabeli docelowej"/>
+    <col name="XmlDefinition" type="text" readonly="set" 
+			category="Definicja" caption="Definicja tabeli" description="Definicja struktury tabeli w bazie danych"/>
+    <col name ="FolderPath" type="string" length="255" category="Definicja" caption="Ścieżka"
+         description="Ścieżka w folderach enova365"/>    
+
+  </table>
+
+  <table name="SnapshotColumn" tablename="SnapshotColumns" 
+         caption="Kolumna definicji zdjęcia" tablecaption="Kolumny definicji zdjęcia">
+    <col name="Definition" type="SnapshotDefinition" 
+      category="Ogólne" description="Definicja zdjęcia dla danej kolumny"
+      required="true" readonly="true"
+			relname="Snapshot column definition"
+			children="Columns"
+			keyclass="Lp" keyclasscol="Number"
+			keyprimary="true" keyunique="true" delete="cascade" relguided="inner" relright="true"
+		/>
+    <col name="Number" type="int" 
+         category="Ogólne" caption="Numer" description="Numer kolejny kolumny"/>
+    <col name="Kind" type="SnapshotColumnKind"
+         category="Ogólne" caption="Rodzaj" description="Określa rodzaj pochodzenia danego pola"/>
+    <col name="InitiallyHidden" type="boolean"
+         category="Ogólne" caption="Początkowo ukryte" description="Określa czy pole standardowo ma być ukryte"/>
+    <col name="Name" type="string" length="40" 
+         category="Ogólne" caption="Nazwa" description="Nazwa kolumny"/>
+    <col name="Description" type="string" length="80"
+         category="Ogólne" caption="Opis" description="Opis zawartości danej kolumny"/>
+    <col name="SourcePath" type="string" length="255" modifier="public virtual"
+         category="Ogólne" caption="Ścieżka" description="Ścieżka do danych źródłowych"/>
+    <col name="DbName" type="string" length="50" required="true"
+			   category="Definicja" caption="Nazwa pola" description="Nazwa pola tabeli docelowej"/>
+    <col name="TypeName" type="string" length="80" required="true" modifier="internal"
+			   category="Definicja" />
+  </table>
+
+  <table name="SnapshotRange" tablename="SnapshotRanges" guided="Root"
+         caption="Zakres zdjęcia danych" tablecaption="Zakresy zdjęć danych">
+    <col name="Definition" type="SnapshotDefinition"
+      category="Ogólne" description="Definicja zdjęcia dla danego zakresu"
+      required="true" readonly="true"
+			relname="Snapshot range definition"
+			children="Ranges"
+			keyprimary="true" keyunique="true" delete="cascade" relright="true"
+		>
+      <keycol name="CreationDate"/>
+    </col>
+    <col name="CreationDate" type="datetime" readonly="true" required="true"
+         category="Ogólne" caption="Data utworzenia" description="Data i godzina rozpoczęcia tworzenia zdjęcia."/>
+    <col name="CreationTime" type="time" specialaccess="true"
+         category="Ogólne" caption="Czas tworzenia" description="Czas trwana operacji tworzenia zdjęcia."/>
+    <col name="IsFinished" type="boolean" specialaccess="true"
+         category="Ogólne" caption="Policzony" description="Informuje, czy zakończono przeliczenie zdjęcia."/>
+    <col name="DatabaseGuid" type="guid" readonly="true" 
+         category="Ogólne" description="Identyfikator bazy danych, z której pochodzi dane zdjęcie."/>
+    <col name="DatabaseName" type="string" length="80" readonly="true"
+         category="Ogólne" caption="Baza danych" description="Nazwa bazy danych, z której pochodzi dane zdjęcie."/>
+    <col name="XmlContext" type="text" modifier="internal"
+         caption="Zapisany kontekst" description="Zapisane ustawienia kontekstu danych"/>
+  </table>
+
+  <enum name="SnapshotColumnKind" />
+
+</module>

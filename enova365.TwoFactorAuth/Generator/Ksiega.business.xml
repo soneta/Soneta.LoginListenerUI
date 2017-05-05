@@ -1,0 +1,666 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<module xmlns="http://www.enova.pl/schema/business_struct.xsd" name="Ksiega" namespace="Soneta.Ksiega" versionName="enova">
+
+
+	<!--***********************************************************************************************-->
+	<!--                                      KSIEGOWOSC                                               -->
+	<!-- ********************************************************************************************* -->
+
+
+	<import>..</import>
+
+
+	<!--***********************************************************************************************-->
+	<!--                                         USINGS                                                -->
+	<!-- ********************************************************************************************* -->
+
+
+	<using>Soneta.Core</using>
+	<using>Soneta.Config</using>
+	<using>Soneta.Waluty</using>
+	<using>Soneta.Kasa</using>
+	<using>Soneta.EwidencjaVat</using>
+	<using>Soneta.Ksiega.Podzielniki</using>
+
+
+	<!--***********************************************************************************************-->
+	<!--                                          ENUMS                                                -->
+	<!-- ********************************************************************************************* -->
+
+
+	<enum name="VerifierType" />
+	<enum name="TypOkresuObrachunkowego" />
+	<enum name="TypDziennika" />
+	<enum name="StanyZapisuKPiR" />
+	<enum name="TypZapisu" />
+	<enum name="StatusRozliczeniaZapisu" />
+	<enum name="StatusRoznicyKursowej" />
+	<enum name="TypRozliczeniaKS" />
+	<enum name="KontrolaSalda" />
+	<enum name="TypKonta" />
+	<enum name="RodzajKonta" />
+	<enum name="KontoWielowalutowe" />
+	<enum name="NrKolumnyKPiR" />
+	<enum name="TypWzoruPorownania"/>
+	<enum name="TypPowiazania" />
+	<enum name="TypObrotu" />
+	<enum name="TrybEdycjiSchematu" />
+	<enum name="WarunekSchematu" />
+	<enum name="DataSchematu" />
+	<enum name="OpisSchematu" />
+	<enum name="KontekstSchematu" />
+	<enum name="KontoSchematu" />
+	<enum name="ElementSlownikaSchematu" />
+	<enum name="KwotaSchematu" />
+	<enum name="StronaSchematu" />
+	<enum name="TypOpisuAnalitycznego" />
+	<enum name="PredefinicjaOkresu" />
+	<enum name="PredefinicjaZakresu" />
+	<enum name="RodzajZakresuWzględnego"/>
+	<enum name="TypKolumnyZestawienia" />
+	<enum name="SumowaniePozycji" />
+	<enum name="TypPozycjiZestawienia" />
+	<enum name="TypGrupyKont" />
+	<enum name="SchematPodzElemWg" />
+
+
+	<!--***********************************************************************************************-->
+	<!--                                         SUBROWS                                               -->
+	<!-- ********************************************************************************************* -->
+
+
+	<subrow name="KPiR">
+		<col name="Lp" type="int" batchfield="false"/>
+		<col name="Stan" type="StanyZapisuKPiR"/>
+		<col name="Uwagi" type="string" length="80"/>
+	</subrow>
+
+
+	<subrow name="DefinicjaZakresu">
+		<col name="Okres" type="PredefinicjaOkresu" name12="O" />
+		<col name="LicznikOkresu" type="int" name12="LO" />
+		<col name="Zakres" type="PredefinicjaZakresu" name12="Z" />
+		<col name="LicznikZakresu" type="int" name12="LZ" />
+		<col name="ZakresReczny" type="FromTo" name12="ZR" />
+		<col name="RodzajWzglednego" type="RodzajZakresuWzględnego" caption="Rodzaj zakresu względnego" />
+	</subrow>
+
+
+	<!--***********************************************************************************************-->
+	<!--                                       INTERFACES                                              -->
+	<!-- ********************************************************************************************* -->
+
+
+	<interface name="IPozycjaZestawieniaRoot" />
+
+
+	<!--***********************************************************************************************-->
+	<!--                                         TABLES                                                -->
+	<!-- ********************************************************************************************* -->
+
+
+	<!--OKRES OBRACHUNKOWY-->
+	<table name="OkresObrachunkowy" name8="OkObrach" tablename="OkresyObrach" caption="Okres obrachunkowy"
+		tablecaption="Okresy obrachunkowe" guided="Root" config="true">
+		<key name="WgOkresu" keyunique="true">
+			<keycol name="Okres.To" />
+		</key>
+		<key name="WgSymbolu" keyunique="true" keyprimary="true">
+			<keycol name="Symbol" />
+		</key>
+		<col name="Typ" type="TypOkresuObrachunkowego" readonly="true" selector="true" category="Ogólne" description="Typ okresu obrachunkowego" />
+		<col name="Symbol" type="string" length="6" required="true" category="Ogólne" description="Symbol okresu obrachunkowego." />
+		<col name="Okres" type="FromTo" required="true" category="Ogólne" description="Otwarcie i zamkniecie okresu obrachunkowego." />
+		<col name="DataZamkniecia" name12="DataZ" type="date" category="Ogólne" description="Data zamknięcia zapisów" />
+		<col name="Opis" type="string" length="80" category="Ogólne" />
+		<col name="DozwolonyOkres" type="FromTo" name12="DozwOkres" category="Ogólne" description="Dozwolony okres księgowania" />
+		<col name="ReakcjaKsiegowa" type="VerifierType" name12="ReakcjaK" category="Ogólne" description="Reakcja na podatkowe przekroczenie dozwolonego okresu księgowania" />
+		<col name="ReakcjaPodatkowa" type="VerifierType" name12="ReakcjaP" category="Ogólne" description="Reakcja na księgowe przekroczenie dozwolonego okresu księgowania" />
+		<col name="DozwolonyOkresRozliczenKs" type="FromTo" name12="DozwOkresRKs" category="Ogólne" description="Dozwolony okres rozliczeń księgowych" />
+		<col name="ReakcjaRozliczenKs" type="VerifierType" name12="ReakcjaRKs" category="Ogólne" description="Reakcja na przekroczenie dozwolonego okresu rozliczeń księgowych" />
+		<col name="Nieaktywny" type="boolean" caption="Nieaktywne schematy" category="Ogólne" description="Włącz na nieużywanych okresach, aby przyspieszyć predekretację"/>
+	</table>
+
+
+	<!--DEKRETBASE-->
+	<table name="DekretBase" name8="Dekret" tablename="Dziennik" guided="Root" tablecaption="Dziennik księgowy">
+		<key name="WgNumerEwidencji">
+			<keycol name="Okres" />
+			<keycol name="Typ" />
+			<keycol name="NumerEwidencji" />
+		</key>
+		<key name="WgNumerDokumentu">
+			<keycol name="Okres" />
+			<keycol name="Typ" />
+			<keycol name="NumerDokumentu" />
+		</key>
+		<key name="WgNumeruDziennika">
+			<keycol name="Okres" />
+			<keycol name="Typ" />
+			<keycol name="Numer.Pelny" />
+		</key>
+		<key name="WgKPiR">
+			<keycol name="Numer.Symbol"/>
+			<keycol name="KPiR.Lp"/>
+		</key>
+		<col name="Okres" type="OkresObrachunkowy" readonly="true" required="true" relname="Dekrety okresu obrachunkowego" keyprimary="true" category="Okres obrachunkowy" description="Okres obrachunkowy">
+			<keycol name="Typ" />
+			<keycol name="Data" />
+		</col>
+		<col name="Ewidencja" type="DokEwidencji" readonly="true" required="true" relname="Dekrety dokumentu ewidencji" children="Dekrety" relright="true" category="Ewidencja dokumentów" />
+		<col name="NumerEwidencji" type="string" length="40" required="true" />
+		<col name="NumerDokumentu" type="string" length="40" required="true" />
+		<col name="DefinicjaEwidencji" required="true" type="DefinicjaDokumentu"/>
+		<col name="Typ" type="TypDziennika" required="true" readonly="true" selector="true" category="Ogólne" />
+		<col name="Bufor" type="boolean" category="Ogólne" />
+		<col name="Numer" name12="Nr" type="NumerDokumentu" category="Ogólne" />
+		<col name="Data" type="date" required="true" category="Ogólne" />
+		<col name="Opis" type="string" length="80" required="true" category="Ogólne">
+			<attribute>Dictionary("Opis dekretu", ManualList=true)</attribute>
+		</col>
+		<col name="Winien" type="currency" category="Ogólne" />
+		<col name="Ma" type="currency" category="Ogólne" />
+		<col name="DekretGlowny" type="DekretBase" readonly="true" children="DekretyPomocnicze"	relname="Dekrety pomocnicze" />
+		<col name="KPiR" type="KPiR"/>
+		<col name="GrupowanieZapisow" type="boolean" category="Ogólne" description="Określa czy dekret obsługuje grupowanie zapisów i kontrolę dwustronności zapisów w obrębie grup"/>
+	</table>
+
+
+	<!--ZAPISKSIEGOWY-->
+	<table name="ZapisKsiegowy" name8="ZapKsieg" tablename="ZapisyKsiegowe" caption="Zapis księgowy" tablecaption="Zapisy księgowe">
+		<interface>IElementKsiegowalny</interface>
+		<key name="WgNumerEwidencji">
+			<keycol name="Okres" />
+			<keycol name="TypDziennika" />
+			<keycol name="NumerEwidencji" />
+		</key>
+		<key name="WgNumerDokumentu">
+			<keycol name="Okres" />
+			<keycol name="TypDziennika" />
+			<keycol name="NumerDokumentu" />
+		</key>
+		<key name="WgNumerZapisu">
+			<keycol name="Okres" />
+			<keycol name="TypDziennika" />
+			<keycol name="Numer" />
+		</key>
+		<key name="WgOkresDataRozliczenia">
+			<keycol name="Okres" />
+			<keycol name="DataRozliczenia" />
+		</key>
+		<key name="WgKontoDataPodatkowa">
+			<keycol name="Konto" />
+			<keycol name="TypDziennika" />
+			<keycol name="DataPodatkowa" />
+		</key>
+		<col name="Okres" type="OkresObrachunkowy" readonly="true" required="true" relname="Zapisy okresu obrachunkowego" category="Okres obrachunkowy" description="Okres obrachunkowy">
+			<keycol name="TypDziennika" />
+			<keycol name="Data" />
+		</col>
+		<col name="Dekret" type="DekretBase" required="true" readonly="true" children="Zapisy" reldefault="true" relname="Zapisy dekretu" relguided="true" keyclass="Lp" keyclasscol="Lp" relright="true" keyprimary="true" category="Ogólne" />
+		<col name="Lp" type="int" modifier="public virtual" batchfield="false" category="Ogólne" />
+		<col name="Grupa" type="int" modifier="public" category="Ogólne" />
+		<col name="TypDziennika" type="TypDziennika" required="true" readonly="true" category="Ogólne" />
+		<col name="Typ" type="TypZapisu" required="true" readonly="true" selector="true" category="Ogólne" />
+		<col name="Bufor" type="boolean" category="Ogólne" />
+		<col name="Data" type="date" required="true" category="Ogólne" />
+		<col name="DataPodatkowa" type="date" required="true" category="Ogólne" />
+		<col name="Numer" type="string" length="40" required="true" />
+		<col name="NumerEwidencji" type="string" length="40" required="true" />
+		<col name="DefinicjaEwidencji" type="DefinicjaDokumentu" required="true"/>
+		<col name="NumerDokumentu" type="string" length="40" required="true" />
+		<col name="ElementKsiegowalny" name12="ElemKsieg" type="IElementKsiegowalny" children="ZapisyKsiegowe" relname="Zapis księgowy elementu księgowalnego" category="Element księgowalny" description="Element księgowalny zapisu" />
+		<col name="Konto" type="KontoBase" required="true" children="Zapisy" relname="Zapisy konta" relright="true" reldefault="true" category="Ogólne">
+			<keycol name="TypDziennika" />
+			<keycol name="Data" />
+		</col>
+		<col name="Strona" type="StronaKsiegowania" required="true" />
+		<col name="KwotaOperacji" type="currency" name12="KO" category="Ogólne" />
+		<col name="KwotaZapisu" type="currency" name12="KZ" category="Ogólne" />
+		<col name="Kurs" type="double" category="Ogólne" />
+		<col name="Opis" type="string" length="150" required="true" category="Ogólne">
+			<attribute>Dictionary("Opis zapisu", ManualList=true)</attribute>
+		</col>
+		<col name="DataRozliczenia" name12="DataR" type="date" required="false" specialaccess="true" category="Rozliczenie" />
+		<col name="RozliczonaKwotaOperacji" name12="RKO" type="currency" specialaccess="true" category="Rozliczenie" />
+		<col name="RozliczonaKwotaZapisu" name12="RKZ" type="currency" specialaccess="true" category="Rozliczenie" />
+		<col name="ZapisGlowny" type="ZapisKsiegowy" children="ZapisyPomocnicze" relname="Zapis główny zapisów pomocniczych" category="Zapis główny" />
+	</table>
+
+
+	<!--ROZLICZENIEKS-->
+	<table name="RozliczenieKS" name8="RozKS" tablename="RozliczeniaKS" caption="Rozliczenie księgowe" tablecaption="Rozliczenia księgowe" warnings="Off">
+		<interface>IRozliczenie</interface>
+		<interface>IElementKsiegowalny</interface>
+		<key name="WgStatusRK" keyprimary="true">
+			<keycol name="StatusRK" />
+			<keycol name="Data" />
+		</key>
+		<col name="Typ" type="TypRozliczeniaKS" required="true" readonly="true" selector="true" />
+		<col name="RozliczenieZrodlowe" name12="RozZrodl" type="IRozliczenie" readonly="true" children="RozliczeniaKS" relname="Rozliczenie źródłowe rozliczenia księgowego" delete="cascade" keyunique="false" />
+		<col name="Ewidencja" type="DokEwidencji" children="Rozliczenia" relname="Rozliczenia powodujące różnice kursowe" category="Różnica kursowa" description="Ewidencja różnic kursowych" />
+		<col name="StatusRK" type="StatusRoznicyKursowej" category="Różnica kursowa" description="Status różnicy kursowej" />
+		<col name="Data" type="date" required="true" />
+		<col name="ZapisWinien" name12="ZW" type="ZapisKsiegowy" required="true" readonly="true" children="RozliczeniaMa" relname="Rozliczenia Ma zapisu" />
+		<col name="KwotaOperacjiWinien" name12="KOW" type="currency" />
+		<col name="KwotaZapisuWinien" name12="KZW" type="currency" required="true" />
+		<col name="ZapisMa" name12="ZM" type="ZapisKsiegowy" required="true" readonly="true" children="RozliczeniaWinien" relname="Rozliczenia Winien zapisu" />
+		<col name="KwotaOperacjiMa" name12="KOM" type="currency" />
+		<col name="KwotaZapisuMa" name12="KZM" type="currency" required="true" />
+	</table>
+
+
+	<!--KONTO-->
+	<table name="KontoBase" tablename="Konta" tablecaption="Konto" guided="Root" caption="Konto">
+		<key name="WgOkresuRodzaju">
+			<keycol name="Okres" />
+			<keycol name="Rodzaj" />
+		</key>
+		<key name="WgOkresuNazwy">
+			<keycol name="Okres" />
+			<keycol name="Nazwa" />
+		</key>
+		<key name="WgSystematyki">
+			<keycol name="Okres" />
+			<keycol name="Syntetyczne" />
+			<keycol name="Symbol" />
+		</key>
+		<key name="WgSystematykiNazwy">
+			<keycol name="Okres" />
+			<keycol name="Syntetyczne" />
+			<keycol name="Nazwa" />
+		</key>
+		<col name="Okres" type="OkresObrachunkowy" required="true" readonly="true" relname="Okres obrachunkowy konta" reldefault="true" delete="cascade" keyprimary="true" keyunique="true" category="Ogólne" description="Okres obrachunkowy.">
+			<keycol name="Symbol" />
+		</col>
+		<col name="Rodzaj" type="RodzajKonta" required="true" readonly="true" selector="true" category="Ogólne" />
+		<col name="Nadrzedne" type="KontoBase" readonly="true" children="SubKonta" relname="Konto nadrzędne konta" reldefault="true" delete="cascade" category="Ogólne" description="Konto nadrzędne.">
+			<keycol name="Symbol" />
+		</col>
+		<col name="Oddzial" type="OddzialFirmy" category="Ogólne" relname="Oddział firmy do któego należy to konto księgowe" relright="true" />
+		<col name="Symbol" type="string" length="128" required="true" category="Ogólne" description="Symbol konta." />
+		<col name="Symbol2" type="string" length="128" specialaccess="true" readonly="set" category="Ogólne" description="Symbol konta bez myślników." />
+		<col name="Segment" type="string" length="30" required="true" category="Ogólne" description="Segment konta." />
+		<col name="Nazwa" type="string" length="128" required="true" category="Ogólne" description="Nazwa konta." />
+		<col name="Poziom" type="int" required="false" category="Ogólne" description="Poziom konta w strukturze planu kont" />
+		<col name="Kolumna" type="NrKolumnyKPiR" description="Kolumna w Księdze Przychodów i Rozchodów"/>
+		<col name="PrzyszlySymbol" type="string" length="128" category="Ogólne" description="Symbol konta w przyszłym okresie." />
+		<col name="ElementKsiegowalny" name12="ElemKsieg" type="TypElementuKsiegowalnego" category="Typ" description="Określa jaki typ obiektu w systemie związany jest z księgowaniem na to konto" />
+		<col name="Typ" type="TypKonta" category="Typ" description="Typ konta" />
+		<col name="Rozliczeniowe" type="boolean" category="Typ" />
+		<col name="KontrolaSalda" type="KontrolaSalda" category="Typ" />
+		<col name="Aktywne" type="boolean" category="Typ" />
+		<col name="Syntetyczne" type="boolean" category="Typ" />
+		<col name="Waluta" type="Waluta" required="true" category="Waluty" />
+		<col name="KontoWielowalutowe" type="KontoWielowalutowe" category="Waluty" />
+		<col name="WalutaWybrana" type="Waluta" category="Waluty" />
+		<col name="KontoZwykle" type="KontoBase" children="KontaWalutowe" relname="Konta walutowe konta" category="Waluty" />
+		<col name="Slownik" type="DefinicjaSlownika" relname="Konta słownikowe definicji" category="Słownikowe" />
+		<col name="BOWn" type="decimal" category="BO" />
+		<col name="BOMa" type="decimal" category="BO" />
+		<col name="BOWnB" type="decimal" category="BO" />
+		<col name="BOMaB" type="decimal" category="BO" />
+	</table>
+
+
+	<!--DefinicjaAnalityki-->
+	<table name="DefinicjaAnalityki" name8="DefAnal" tablename="DefAnalityk" caption="Definicja analityki" tablecaption="Definicje analityk">
+		<col name="Konto" type="KontoBase" required="true" readonly="true" children="DefinicjeAnalityk" relname="Definicje analityk konta" reldefault="true" delete="cascade" relguided="inner" keyclass="Lp" keyclasscol="Lp" keyprimary="true" category="Ogólne" description="Konto definicji analityki" />
+		<col name="Lp" type="int" batchfield="false" category="Lp" description="Liczba porządkowa definicji analityki konta" />
+		<col name="DefinicjaSlownika" type="DefinicjaSlownika" description="Definicja słownika" category="Ogólne" caption="Def. słownika"/>
+		<col name="TypWzoruSegmentu" type="TypWzoruPorownania" description="Typ wzoru segmentu" category="Ogólne"/>
+		<col name ="WzorSegmentu" type="string" length="255" description="Wzór segmentu" category="Ogólne" caption="Wzór segmentu"/>
+		<col name="DlugoscSegmentu" type="int" description="Długośc segmentu" category="Ogólne" caption="Długość segmentu"/>
+		<col name="Nazwa" type="string" length="255" description="Składnia nazwy analityki" category="Ogólne"/>
+		<col name="GenerujAnalityke" type="boolean" description="Generuj analitykę przy tworzeniu w nowym okresie obrachunkowym" category="Ogólne"/>
+		<col name="ZabronioneKsiegowanie" type="boolean" modifier="public virtual" description="Nie pozwala księgować na tym poziomie analityki" category="Ogólne"/>
+	</table>
+
+
+	<!--POWIAZANIEKONTABASE-->
+	<table name="PowiazanieKontaBase" name8="PowKonta" tablename="PowiazaniaKont" caption="Powiązanie konta" tablecaption="Powiązania kont">
+		<col name="Typ" type="TypPowiazania" required="true" readonly="true" selector="true" />
+		<col name="Konto" type="KontoBase" required="true" readonly="true" children="PowiazanieKonta" relname="Powiazanie konta" relguided="inner" delete="cascade" keyunique="true" keyprimary="true">
+			<keycol name="KontoSlownikowe" />
+		</col>
+		<col name="KontoSlownikowe" name12="KontoSlow" type="KontoBase" readonly="true" children="SlownikPowiazan" relname="Słownik powiązań">
+			<keycol name="Element" />
+		</col>
+		<col name="Element" type="IElementSlownika" required="true" readonly="true" children="PowiazaniaKontElementu" relname="Powiązania elementu słownika"/>
+	</table>
+
+
+	<!--DEFINICJASLOWNIKA-->
+	<table name="DefinicjaSlownika" name8="DefSlow" tablename="DefSlownikow" caption="Definicja słownika" tablecaption="Definicje słowników" guided="Root" config="true">
+		<interface>IRightsSource</interface>
+		<key name="WgNazwy" keyprimary="true" keyunique="true">
+			<keycol name="Nazwa" />
+		</key>
+		<col name="Nazwa" type="string" length="30" required="true" />
+		<col name="tabele" type="string" length="255" modifier="protected" />
+		<col name="Algorytm" type="text" category="Ogólne">
+			<attribute>ControlEdit(ControlEditKind.Algorithm)</attribute>
+		</col>
+	</table>
+
+
+	<!--ELEMDEFINICJISLOWNIKA-->
+	<table name="ElemDefinicjiSlownika" name8="EDefSlow" tablename="ElemDefSlownikow" caption="Element definicji słownika" tablecaption="Elementy definicji słowników" config="true">
+		<col name="Definicja" type="DefinicjaSlownika" required="true" readonly="true" children="Elementy" relname="Elementy definicji słownika" reldefault="true" keyclass="Lp" keyclasscol="Lp" keyprimary="true" relguided="inner" category="Ogólne" description="Definicja słownika" />
+		<col name="Lp" type="int" batchfield="false" />
+		<col name="Segment" type="string" length="80" required="true" />
+		<col name="Nazwa1" type="string" length="120" />
+		<col name="Nazwa2" type="string" length="120" />
+	</table>
+
+
+	<!--ELEMSLOWNIKA-->
+	<table name="ElemSlownika" name8="ESlow" tablename="ElemSlownikow" caption="Element słownika" tablecaption="Elementy słowników" guided="Root">
+		<interface>IElementSlownika</interface>
+		<col name="Definicja" type="DefinicjaSlownika" required="true" readonly="true" children="ElementySlownika" relname="Elementy słownika" keyunique="true" keyprimary="true" category="Ogólne" description="Definicja słownika">
+			<keycol name="Symbol"/>
+		</col>
+		<col name="Symbol" type="string" length="30" required="true" />
+		<col name="Nazwa" type="string" length="120" required="true"/>
+		<col name ="Zablokowany" type="boolean"/>
+		<col name="Oddzial" type="OddzialFirmy" category="Ogólne" description="Oddział firmy" relright="true"/>
+	</table>
+
+
+	<!--OBROTKSIEGOWY-->
+	<table name="ObrotKsiegowyBase" name8="ObrotKS" tablename="ObrotyKsiegowe" warnings="Off">
+		<col name="Typ" type="TypObrotu" readonly="true" selector="true" />
+		<col name="Konto" type="KontoBase" required="true" readonly="true" children="ObrotyKsiegowe" relname="Obroty ksiegowe konta" delete="cascade" keyclass="Date" keyclasscol="Data" keyprimary="true">
+			<keycol name="Typ" />
+		</col>
+		<col name="Okres" type="OkresObrachunkowy" readonly="true" relname="Obroty ksiegowe okresu obrachunkowe">
+			<keycol name="Typ" />
+		</col>
+		<col name="Data" type="date" required="true" readonly="true" />
+		<col name="Wn" type="decimal" modifier="internal" />
+		<col name="Ma" type="decimal" modifier="internal" />
+		<col name="WnB" type="decimal" modifier="internal" />
+		<col name="MaB" type="decimal" modifier="internal" />
+		<col name="NWn" type="decimal" modifier="internal" />
+		<col name="NMa" type="decimal" modifier="internal" />
+		<col name="NWnB" type="decimal" modifier="internal" />
+		<col name="NMaB" type="decimal" modifier="internal" />
+		<col name="SaldoWn" type="decimal" modifier="internal" />
+		<col name="SaldoMa" type="decimal" modifier="internal" />
+		<col name="SaldoWnB" type="decimal" modifier="internal" />
+		<col name="SaldoMaB" type="decimal" modifier="internal" />
+	</table>
+
+
+	<!--SCHEMATKSIEGOWY-->
+	<table name="SchematKsiegowy" name8="SchemKs" tablename="SchematyKsiegowe" caption="Schemat księgowy" tablecaption="Schematy księgowe" guided="Root" config="true">
+		<key name="WgOkresuNazwy" keyprimary="true" keyunique="true">
+			<keycol name="Okres" />
+			<keycol name="Nazwa" />
+		</key>
+		<key name="WgOkresuTypuEwidencji">
+			<keycol name="Okres" />
+			<keycol name="TypEwidencji" />
+		</key>
+		<key name="WgOkresuWywolaniaTypuEwidencji">
+			<keycol name="OkresWywolania" />
+			<keycol name="TypEwidencji" />
+		</key>
+		<col name="Nazwa" type="string" length="30" required="true" category="Ogólne" />
+		<col name="TrybEdycji" type="TrybEdycjiSchematu" category="Ogólne" description="Tryb edycji schematu" />
+		<col name="Okres" type="OkresObrachunkowy" required="true" readonly="true" children="SchematyKsiegowe" relname="Schematy księgowe okresu obrachunkowego" delete="cascade" category="Ogólne" description="Okres obrachunkowy schematu" />
+		<col name="OkresWywolania" type="OkresObrachunkowy" required="true" children="SchematyKsiegoweDoWywolania" relname="Schematy księgowe okresu obrachunkowego do wywołania" category="Ogólne" description="Okres obrachunkowy schematu do wywołania" />
+		<col name="TypEwidencji" type="TypDokumentu" required="true" readonly="true" selector="true" category="Ogólne" description="Typ dokumentu ewidencji schematu" />
+		<col name="Definicja" type="DefinicjaDokumentu" category="Ogólne" description="Definicja dokumentu ewidencji" />
+		<col name="Blokada" type="boolean" category="Ogólne" description="Blokuje schemat - nie jest używany podczas predekretacji" />
+		<col name="text" type="text" modifier="protected" category="System" />
+	</table>
+
+
+	<!--POZYCJASCHEMATUKSIEGOWEGO-->
+	<table name="PozycjaSchematuKsiegowego" name8="PSchemKs" tablename="PozSchemKsiegT" caption="Pozycja schematu księgowego" tablecaption="Pozycje schematów księgowych" config="true">
+		<col name="Schemat" type="SchematKsiegowy" required="true" readonly="true" children="Pozycje" relname="Pozycje schematu księgowego" reldefault="true" delete="cascade" relguided="inner" keyclass="Lp" keyclasscol="Lp" keyprimary="true" category="Ogólne" description="Pozycje schematu księgowego" />
+		<col name="Lp" type="int" batchfield="false" category="Lp" description="Liczba porządkowa pozycji w schemacie" />
+		<col name="TypEwidencji" type="TypDokumentu" required="true" readonly="true" selector="true" category="Ogólne" description="Typ dokumentu ewidencji schematu" />
+		<col name="TrybEdycji" type="TrybEdycjiSchematu" category="Ogólne" description="Tryb edycji pozycji" />
+		<col name="text" type="text" modifier="protected" category="System" />
+	</table>
+
+
+	<!--ELEMOPISUANALITYCZNEGO-->
+	<table name="ElemOpisuAnalitycznego" name8="EOpAnal" tablename="OpisAnalityczny" caption="Element opisu analitycznego" tablecaption="Opis analityczny" warnings="Off">
+		<key name="WgDaty" keyprimary="true">
+			<keycol name="Data" />
+		</key>
+		<key name="WgZrodloSchemat">
+			<keycol name="Zrodlo"/>
+			<keycol name="SchematPodz" />
+		</key>
+		<key name="WgEwidencjaSchemat">
+			<keycol name="Ewidencja"/>
+			<keycol name="SchematPodz" />
+		</key>
+
+		<col name="Typ" type="TypOpisuAnalitycznego" required="true" readonly="true" selector="true" />
+		<col name="Ewidencja" type="DokEwidencji"  children="OpisAnalityczny" relguided="inner" specialaccess="true" relname="Opis analityczny ewidencji" category="Ogólne" relright="true" />
+		<col name="Zrodlo" type="IZrodloOpisuAnalitycznego" readonly="true" children="OpisAnalityczny" relname="Opis analityczny zrodła" delete="cascade" category="Ogólne" />
+		<col name="Symbol" type="string" length="128" required="true" category="Ogólne">
+			<verifier name="ElemOpisuAnalitycznego.RozszerzenieSymboluOpisuVerifier" onadded="true"/>
+		</col>
+		<col name="Wymiar" type="string" length="128" required="true" category="Ogólne">
+			<verifier name="ElemOpisuAnalitycznego.RozszerzenieWymiaruOpisuVerifier" onadded="true"/>
+		</col>
+		<col name="Kwota" type="currency" category="Ogólne" >
+			<verifier name="ElemOpisuAnalitycznego.KwotaVerifier" onadded="true"/>
+		</col>
+		<col name="KwotaDodatkowa" type="currency" category="Ogólne" />
+		<col name="Data" type="date" required="true" category="Ogólne" />
+		<col name="Opis" type="string" length="80" category="Ogólne">
+			<attribute>Dictionary("Opis opisu", ManualList=true)</attribute>
+		</col>
+		<col name="PozycjaBudzProj" type="PozycjaBudzProj" cstype="IPozycjaBudzProjRow" category="Ogólne" description="Pozycja budżetu projektu, z którą powiązany jest element" children="ElementyOpisuAnalitycznego" relname="Elementy opisu analitycznego pozycji budżetu" >
+			<verifier name="ElemOpisuAnalitycznego.IloscVerifier" />
+		</col>
+		<col name="Ilosc" type="Amount" category="Ogólne" >
+			<verifier name="ElemOpisuAnalitycznego.IloscVerifier" onadded="true" />
+		</col>
+		<col name="SchematPodz" type="SchematPodz" category="" />
+		<col name="PlatnoscPowiazana" type="Platnosc"  category="Powiązane" description="Powiązana płatność" children="OpisyPowiazane" relname="Opisy powiązane płatności" specialaccess="true" modifier="protected"/>
+		<col name="ZapisPowiazany" type="ZapisKsiegowy"  category="Powiązane" description="Powiązany zapis" children="OpisyPowiazane" relname="Opisy powiązane zapisu księgowego" specialaccess="true" modifier="protected"/>
+		<col name="CentrumKosztow" type="CentrumKosztow" category="Ogólne" description="Centrum kosztów" relname="Centrum kosztów opisu analitycznego" caption="Centrum kosztów" />
+	</table>
+
+
+	<!--ZestawienieKS-->
+	<table name="ZestawienieKS" name8="ZestKS" tablename="ZestawieniaKS" caption="Zestawienie księgowe" tablecaption="Zestawienia księgowe" guided="Root">
+		<interface>IPozycjaZestawieniaRoot</interface>
+		<key name="WgSymbolu" keyprimary="true" keyunique="true">
+			<keycol name="Symbol" />
+		</key>
+		<col name="Oddzial" type="OddzialFirmy" category="Ogólne" description="Oddział firmy" relright="true">
+			<verifier name="OddzialRightsVerifier" onadded="true"/>
+			<verifier name="OddzialRequiredVerifier" onadded="true"/>
+		</col>
+		<col name="Symbol" type="string" length="12" required="true" category="Ogólne" />
+		<col name="Nazwa" type="string" length="255" required="true" category="Ogólne" />
+		<col name="Numeracja" type="string" length="10" modifier="protected" category="Ogólne" />
+	</table>
+
+
+	<!--KolumnaZestKS-->
+	<table name="KolumnaZestKS" name8="KolZKS" tablename="KolumnyZestKS" caption="Kolumna zestawienia księgowego"
+		  tablecaption="Kolumny zestawień księgowych">
+		<key name="WgNazwy" keyunique="true">
+			<keycol name="Zestawienie" />
+			<keycol name="Nazwa" />
+		</key>
+		<col name="Zestawienie" type="ZestawienieKS" readonly="true" required="true" children="Kolumny" relname="Kolumny zestawienia księgowego" delete="cascade" keyclass="Lp" keyclasscol="Lp" keyunique="true" keyprimary="true" relguided="inner" relright="true" category="Ogólne" />
+		<col name="Typ" type="TypKolumnyZestawienia" readonly="true" />
+		<col name="Lp" type="int" required="true" batchfield="false" category="Ogólne" />
+		<col name="Nazwa" type="string" length="30" required="true" category="Ogólne" />
+		<col name="Tytul" type="string" length="30" category="Ogólne" caption="Tytuł"/>
+		<col name="Zakres" type="DefinicjaZakresu" name12="Zakres" category="Ogólne" />
+		<col name="Wyrazenie" type="text" category="Ogólne" />
+	</table>
+
+
+	<!--PozycjaZestKS-->
+	<table name="PozycjaZestKS" name8="PozZKS" tablename="PozycjeZestKS" caption="Pozycja zestawienia księgowego" tablecaption="Pozycje zestawień księgowych">
+		<interface>IPozycjaZestawieniaRoot</interface>
+		<col name="Zestawienie" type="ZestawienieKS" readonly="true" required="true" children="Pozycje" relname="Pozycje zestawienia księgowego" relguided="inner" keyprimary="true" relright="true" category="Ogólne">
+			<keycol name="Symbol" />
+		</col>
+		<col name="RootPozycji" name12="PozNadrz" type="IPozycjaZestawieniaRoot" required="true" children="SubPozycje" relname="Subpozycje pozycji zestawienia" keyclass="Lp" keyclasscol="Lp" category="Ogólne" />
+		<col name="Typ" type="TypPozycjiZestawienia" readonly="true" />
+		<col name="Lp" type="int" batchfield="false" modifier="public virtual" category="Ogólne" />
+		<col name="Symbol" type="string" length="30" required="true" category="Ogólne" />
+		<col name="Opis" type="string" length="120" required="true" category="Ogólne" />
+		<col name="Wyrazenie" type="text" category="Ogólne" />
+		<col name="Sumowanie" type="SumowaniePozycji" category="Ogólne" />
+	</table>
+
+
+	<!--WynikZestKS-->
+	<table name="WynikZestKS" name8="WynikZKS" tablename="WynikiZestKS" caption="Wynik zestawienia księgowego" tablecaption="Wyniki zestawień księgowych">
+		<col name="Zestawienie" type="ZestawienieKS" readonly="true" required="true" children="Wyniki" relname="Wyniki zestawienia księgowego" relguided="inner" keyprimary="true" relright="true" category="Ogólne">
+			<keycol name="Nazwa"/>
+		</col>
+		<col name="Nazwa" type="string" length="255" required="true" category="Ogólne" />
+		<col name="Czas" type="datetime" required="true"  readonly="true" category="Ogólne" />
+	<col name="Okres" type="FromTo" modifier="protected" category="Ogólne" />
+		<col name="XML" type="text" modifier="protected" category="Ogólne"/>
+	</table>
+
+
+	<!--MatrycaBase-->
+	<table name="MatrycaBase" tablename="Matryce" caption="Matryca dokumentu / zapłaty" tablecaption="Matryce dokumentów i zapłat" config="true" guided="Root">
+		<key name="WgSymbol" keyprimary="true" keyunique="true">
+			<keycol name="Symbol" />
+		</key>
+		<key name="WgTypSymbol">
+			<keycol name="Typ" />
+			<keycol name="Symbol" />
+		</key>
+
+		<col name="Typ" type="TypDokumentu" readonly="true" required="true" selector="true" category="Ogólne"/>
+		<col name="Symbol" type="string" length="128"  required="true" category="Ogólne"/>
+		<col name="Blokada" type="boolean" category="Ogólne" caption="Zablokowana" description="Blokada matrycy."/>
+		<col name="Definicja" type="DefinicjaDokumentu" category="Ogólne"/>
+		<col name="Opis" type="string" length="80" category="Ogólne"/>
+		<col name="Rozszerzenie" type="text" modifier="protected" category="Ogólne"/>
+		<col name="Oddzial" type="OddzialFirmy" category="Ogólne" description="Oddział firmy" relright="true" >
+			<verifier name="OddzialRightsVerifier" onadded="true"/>
+			<verifier name="OddzialRequiredVerifier" onadded="true"/>
+		</col>
+		<!-- kod c# definiowalny -->
+		<col name="UserCodeEnabled" type="boolean" category="Compiler" description="Włączanie kodu operatora" />
+		<col name="UserCodeMethod" type="text" category="Compiler" description="Kod operatora uzupełniający działanie matrycy" >
+			<attribute>ControlEdit(ControlEditKind.Algorithm)</attribute>
+		</col>
+	</table>
+
+
+	<!-- MatrycaPodmiot -->
+	<table name="MatrycaPodmiot" tablename="MatrycePodmioty" caption="MatrycaPodmiot" tablecaption="MatrycePodmioty" config="false" >
+		<key name="WgMatrycy" keyprimary="true" keyunique="true">
+			<keycol name="Matryca" />
+			<keycol name="Podmiot" />
+		</key>
+		<col name="Podmiot" type="IPodmiotKasowy" category="Ogólne" description="Podmiot łącznika" children="MatrycePodmiotu" relname="Link podmiot matryca" delete="cascade" >
+			<verifier name="MatrycaPodmiot.PodmiotRequiredVerifier" onadded="true"/>
+		</col>
+		<col name="Matryca" type="MatrycaBase" category="Ogólne" description="Matryca łącznika" children="PodmiotyMatrycy" relname="Link matryca podmiot" delete="cascade" >
+			<verifier name="MatrycaPodmiot.MatrycaRequiredVerifier" onadded="true"/>
+		</col>
+	</table>
+
+
+	<!--DefinicjaKregu-->
+	<table name="DefinicjaKregu" tablename="DefinicjeKregow" caption="Definicja kręgu" tablecaption="Definicje kręgów" guided="Root" config="true">
+		<key name="WgSymbol" keyprimary="true" keyunique="true">
+			<keycol name="Symbol" />
+		</key>
+		<col name="Symbol" type="string" length="128"  required="true" category="Ogólne"/>
+		<col name="Opis" type="string" length="255"  category="Ogólne"/>
+		<col name="Typ" type="TypDokumentu" category="Ogólne"/>
+		<col name="Nieaktywny" type="boolean" category="Ogólne"/>
+	</table>
+
+
+	<!--PozycjaDefKregu-->
+	<table name="PozycjaDefKregu" tablename="PozycjeDefKregow" caption="Pozycja definicji kręgu" tablecaption="Definicje definicji kręgów" config="true">
+		<col name="Definicja" type="DefinicjaKregu" required="true" readonly="true" children="Pozycje" relname="Pozycje definicji kręgu" reldefault="true" keyclass="Lp" keyclasscol="Lp" keyprimary="true" relguided="inner" category="Ogólne" description="Definicja kręgu" />
+		<col name="Lp" type="int" batchfield="false" />
+		<col name="Strona" type="StronaKsiegowania" required="true" category="Ogólne" description="Strona księgowania"/>
+		<col name="Konto" type="string" length="128" category="Ogólne" description="Symbol lub filtr konta"/>
+	</table>
+
+
+	<!--GrupaKont-->
+	<table name="GrupaKont" tablename="GrupyKont" caption="Grupa kont" tablecaption="Grupy kont" guided="Root" config="true">
+		<key name="WgOkresSymbol" keyprimary="true" keyunique="true">
+			<keycol name ="Okres"/>
+			<keycol name="Symbol" />
+		</key>
+		<col name="Typ" type="TypGrupyKont" required="true" readonly="true" selector="true" description="Typ grupy kont" category="Ogólne"/>
+		<col name="Okres" type="OkresObrachunkowy" readonly="true" required="true"/>
+		<col name="Symbol" type="string" length="128"  required="true" category="Ogólne"/>
+		<col name="Opis" type="string" length="255"  category="Ogólne"/>
+		<col name="Nieaktywna" type="boolean" category="Ogólne"/>
+		<col name="Rozszerzenie" type="text" modifier="protected" category="Ogólne"/>
+	</table>
+
+
+	<!--PozGrupyKont-->
+	<table name="PozGrupyKont" tablename="PozGrupyKontT" caption="Pozycja grupy kont" tablecaption="Pozycje grup kont" config="true">
+		<col name="Grupa" type="GrupaKont" required="true" readonly="true" children="Pozycje" relname="Pozycje grupy kont" reldefault="true" keyclass="Lp" keyclasscol="Lp" keyprimary="true" relguided="inner" category="Ogólne" description="Grupa kont" />
+		<col name="Lp" type="int" batchfield="false" />
+		<col name="Konto" type="KontoBase" required="true" relname="Konto grupy" children="PozycjeGrupKont" category="Ogólne" description="Konto"/>
+		<col name="Rozszerzenie" type="text" modifier="protected" category="Ogólne"/>
+	</table>
+
+
+	<!--SchematPodz-->
+	<table name="SchematPodz" tablename="SchematyPodz" guided="Root" config="true"  tablecaption="Schemat podziałowy" caption="Schemat podziałowy">
+		<interface>ISchematPodziałowy</interface>
+
+		<key name="WgNazwa" keyprimary="true" keyunique="true">
+			<keycol name="Nazwa"/>
+		</key>
+		<key name="WgTableName" >
+			<keycol name="TableName"/>
+		</key>
+		<col name="TableName" type="string" length="16" required="true" readonly="true" category="Ogólne" caption="Klasa" description="Klasa obiektu."/>
+		<col name="Nazwa" type="string" length="80" category="Ogólne" required="true" caption="Nazwa projektu" description="Krótka nazwa definicji podzielnika." />
+		<col name="Opis" type="string" length="200" category="Ogólne" caption="Opis" description="Dokładny opis definicji podzielnika." />
+		<col name="Blokada" type="boolean" category="Ogólne" caption="Zablokowana" description="Określa zablokowanie definicji." />
+		<col name="SchematCode" type="text" caption="Kod kalkulatora dla schematu" description="Kod klasy kalkulatora dla schematu.">
+			<attribute>ControlEdit(ControlEditKind.Algorithm)</attribute>
+		</col>
+	</table>
+
+
+	<!--SchematPodzElem-->
+	<table name="SchematPodzElem" tablename="SchematPodzElems" name8="SchPodEl" guided="Root" config="true"  tablecaption="Element schematu podziałowego" caption="Element schematu podziałowego" namespace="Soneta.Ksiega.Podzielniki">
+		<key name="WgNazwaDefinicja" keyprimary="true" keyunique="true">
+			<keycol name="Nazwa"/>
+			<keycol name="SchematPodz" />
+		</key>
+
+		<col name="SchematPodz" type="SchematPodz" required="true" setonlynull="true" category="Ogólne" description="Schemata podziałowy, z którym powiązany jest element" children="SchematPodzElems" relname="SchematPodzElems" delete="cascade" />
+		<col name="Nazwa" type="string" length="80" category="Ogólne" required="true" caption="Nazwa projektu" description="Krótka nazwa definicji podzielnika." />
+		<col name="SchematPodzElemWg" type="SchematPodzElemWg" category="Ogólne" caption="Podział elementu według." description="Określa, czy podana kwota na pozycjach będzie od razu wyliczona, czy będzie przeliczana wg proporcji." />
+		<col name="ZaokraglanieKwoty" type="boolean" category="Ogólne" caption="Określa, czy dodać zaokrąglenie" description="Określa, czy dodać zaokrąglenie do ostatniej pozycji (gdy suma kwot na elementach nie jest równa dzielonej kwocie)." />
+		<col name="Algorytm" type="boolean" category="Ogólne" caption="Określa, czy ma być edytowalny kod definicji" description="Określa, czy ma być edytowalny kod definicji, czy ma być generowany na podstawie innych property." />
+		<col name="KluczTyp" type="string" length="120" category="Algorytm" caption="Określa typ zmiennej w liście kluczy" description="Określa typ zmiennej w liście kluczy." />
+		<col name="PodzielnikCode" type="text" caption="Kod kalkulatora dla podzielnika" description="Kod klasy kalkulatora dla podzielnika.">
+			<attribute>ControlEdit(ControlEditKind.Algorithm)</attribute>
+		</col>
+		<col name="KluczCode" type="text" caption="Kod kalkulatora dla klucza" description="Kod klasy kalkulatora dla klucza." >
+			<attribute>ControlEdit(ControlEditKind.Algorithm)</attribute>
+		</col>
+		<col name="FeaturesXML" type="text" caption="Cechy i ich wyrażenia" description="Cechy i ich wyrażenia dla opisu analitycznego." />
+		<col name="Agregacja" type="boolean" caption="Agregacja opisów analitycznych" description="Określa czy agregować tekie same opisy analityczne." />
+	</table>
+</module>
+

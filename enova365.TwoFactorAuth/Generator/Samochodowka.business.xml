@@ -1,0 +1,202 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+
+<module xmlns="http://www.enova.pl/schema/business_struct.xsd" name="Samochodowka" namespace="Soneta.Samochodowka" versionName="enova">
+	<import>../..</import>
+
+	<using>Soneta.Core</using>
+	<using>Soneta.Config</using>
+	<using>Soneta.Waluty</using>
+	<using>Soneta.Kadry</using>
+	<using>Soneta.Kasa</using>
+	<using>Soneta.EwidencjaVat</using>
+
+
+	<!-- ENUMS -->
+
+
+	<enum name="RodzajPojazdu"/>
+	<enum name="TypPaliwa"/>
+	<enum name="TypPojazdu"/>
+	<enum name="TypTrasy"/>
+
+	
+	<!-- SUBROWS -->
+
+	
+	<subrow name="Trasa">
+		<col name="Typ" type="TypTrasy" required="true"
+			category="Ogólne" description="Typ trasy"/>
+		<col name="Opis" type="string" length="64" required="true"
+			category="Ogólne" description="Opis trasy">
+			<attribute>Dictionary("Opis trasy", ManualList=true)</attribute>
+		</col>
+		<col name="Cel" type="string" length="64" required="true"
+			category="Ogólne" description="Opis trasy">
+			<attribute>Dictionary("Cel trasy", ManualList=true)</attribute>
+		</col>
+		<col name="Dlugosc" type="decimal" required="true"
+			category="Ogólne" description="Długość trasy"/>
+	</subrow>
+	
+	
+	<!-- TABLES -->
+
+	
+	<table name="Pojazd" tablename="Pojazdy" guided="Root">
+    <interface>IElementSlownika</interface>
+    
+		<key name="WgNrRejestracyjny" keyunique="true" keyprimary="true">
+			<keycol name="NrRejestracyjny"/>
+		</key>
+		<key name="WgTyp">
+			<keycol name="Typ"/>
+			<keycol name="NrRejestracyjny"/>
+		</key>
+
+		<col name="NrRejestracyjny" type="string" length="12" required="true" category="Ogólne" description="Numer rejestracyjny pojazdu"/>
+		<col name="Marka" type="string" length="20" required="true" category="Ogólne" description="Marka pojadu">
+			<attribute>Dictionary("Marka pojazdu", ManualList=true)</attribute>
+		</col>
+		<col name="Typ" type="TypPojazdu" required="true" category="Ogólne" description="Typ pojazdu"/>
+		<col name="RodzajSilnika" type="EkoRodzajSilnika" category="Ogólne" description="Rodzaj silnika z pojeździe" relname="Rodzaj silnika pojazdu" />
+		<col name="Rodzaj" type="RodzajPojazdu" required="true" category="Ogólne" description="Rodzaj pojazdu"/>
+		<col name="Dysponent" type="IPodmiotKasowy" relname="Pojazdy pracownika" children="Pojazdy" category="Ogólne" description="Dysponent pojazdu">
+			<keycol name="NrRejestracyjny"/>
+		</col>
+		<col name="Opis" type="text" category="Ogólne" />
+		<col name="Wycofany" type="boolean"	category="Ogólne" />
+	</table>
+
+
+	<table name="PaliwoPojazdu" tablename="PaliwaPojazdu" caption="Paliwo pojazdu" tablecaption="Paliwa pojazdu" >
+		<key name="WgPojazdu" keyprimary="true" keyunique="true" >
+			<keycol name="Pojazd"/>
+			<keycol name="PaliwoSilnika"/>
+		</key>
+		<col name="Pojazd" type="Pojazd" readonly="true" required="true" children="Paliwa" relname="Paliwo pojazdu - pojazd" />
+		<col name="PaliwoSilnika" type="EkoPaliwoSilnika" readonly="true" required="true" relname="Paliwo pojazdu - paliwo silnika" />
+		<col name="Domyslne" type="boolean" caption="Domyślne" description="Czy domyślne paliwo dla silnika" />
+	</table>
+
+	
+	<table name="DefinicjaTrasy" name8="DefTras" tablename="DefinicjeTras" guided="Root" caption="Definicja trasy" tablecaption="Definicje tras">
+		<key name="WgSymbolu" keyunique="true" keyprimary="true">
+			<keycol name="Symbol"/>
+		</key>
+
+		<col name="Symbol" type="string" length="20" required="true" category="Ogólne" description="Symbol definicji trasy"/>
+		<col name="Trasa" type="Trasa" category="Ogólne" description="Parametry trasy trasy"/>
+	</table>
+
+	
+	<table name="Przejazd" tablename="Przejazdy" guided="Root">
+		<key name="WgData" keyprimary="true">
+			<keycol name="Data"/>
+		</key>
+
+		<col name="Data" type="date" required="true" category="Ogólne" description="Data przejazdu"/>
+		<col name="Pojazd" type="Pojazd" required="true" category="Ogólne" description="Pojazd, którym wykonujemy przejazd">
+			<keycol name="Data"/>
+		</col>
+		<col name="DefinicjaTrasy" type="DefinicjaTrasy" category="Ogólne" description="Definicja trasy przejazdu">
+			<keycol name="Data"/>
+		</col>
+		<col name="Trasa" type="Trasa" category="Ogólne" description="Parametry trasy przejazdu"/>
+		<col name="Stawka" type="double" required="true" category="Ogólne" description="Stawka za km"/>
+		<col name="Wartosc" type="decimal" required="true" readonly="set" category="Ogólne" description="Wartość przejazdu"/>
+		<col name="Rozliczenie" type="RozliczenieEP" readonly="set" relname="Przejazdy rozliczenia" children="Przejazdy" category="Ogólne" description="Rozliczenie związane z danym przejazdem">
+			<keycol name="Data"/>
+		</col>
+	</table>
+
+
+	<table name="KosztEP" tablename="KosztyEP" guided="Root" caption="Koszt" tablecaption="KosztyEP">
+		<key name="WgData" keyprimary="true">
+			<keycol name="Data"/>
+		</key>
+
+		<col name="Dokument" type="DokEwidencji" readonly="true" required="true" relname="Koszty ewidencji pojazdów" children="KosztyEP" category="Ogólne" description="Dokument kosztowy"/>
+		<col name="Pojazd" type="Pojazd" required="true" category="Ogólne" description="Pojazd, dla którego rejestrujemy koszty"> 
+			<keycol name="Data"/>
+			<verifier name="KosztEP.RodzajPaliwaVerifier" />
+			<verifier name="KosztEP.PojazdRequiredVerifier" onadded="true" />
+		</col>
+		<col name="Data" type="date" required="true" category="Ogólne" description="Data kosztu"/>
+		<col name="Wartosc" type="decimal" category="Ogólne" description="Wartość kosztu"/>
+		<col name="Opis" type="string" length="80" required="true">
+			<attribute>Dictionary("Cel kosztu", ManualList=true)</attribute>
+		</col>
+		<col name="Rozliczenie" type="RozliczenieEP" readonly="set" relname="Koszty rozliczenia" children="Koszty" category="Ogólne" description="Rozliczenie związane z danym kosztem">
+			<keycol name="Data"/>
+		</col>
+		<col name="IloscPaliwa" type="decimal" category="Dodatkowe" description="Ilość paliwa">
+			<verifier name="KosztEP.IloscPaliwaVerifier" />
+			<verifier name="KosztEP.RodzajPaliwaVerifier" />
+		</col>
+		<col name="RodzajPaliwa" type="EkoRodzajPaliwa" category="Dodatkowe" description="Rodzaj paliwa" relname="Naliczenie kosztu - rodzaj paliwa" >
+			<verifier name="KosztEP.IloscPaliwaVerifier" onadded="true" />
+			<verifier name="KosztEP.RodzajPaliwaVerifier" onadded="true" />
+		</col>
+		<col name="TypPaliwa" type="TypPaliwa" category="Dodatkowe" description="Typ paliwa (historyczny)" />
+	</table>
+
+	
+	<table name="RozliczenieEP" name8="RozEP" tablename="RozliczeniaEP" guided="Root" caption="Rozliczenie" tablecaption="Rozliczenia">
+		<interface>IDokumentKsiegowalny</interface>
+
+		<key name="WgData" keyprimary="true">
+			<keycol name="Data"/>
+		</key>
+
+		<col name="Numer" type="NumerDokumentu" category="Ogólne" description="Numer dokumentu"/>
+		<col name="Definicja" type="DefinicjaDokumentu" required="true" category="Ogólne" description="Definicja dokumentu rozliczenia"/>
+		<col name="Data" type="date" required="true" category="Ogólne" description="Data dokumentu rozliczenia"/>
+		<col name="WartoscPrzejazdow" type="decimal" readonly="set" category="Ogólne" description="Wartość przejazdów"/>
+		<col name="WartoscKosztow" type="decimal" readonly="set" category="Ogólne" description="Wartość kosztów"/>
+		<col name="DoRozliczenia" type="decimal" readonly="set" category="Ogólne" description="Do rozliczenia"/>
+		<col name="KorektaKosztow" type="decimal" readonly="set" category="Ogólne" description="Korekta kosztów"/>
+	</table>
+	
+	
+	<!-- KONFIGURACJA EKOLOGIA -->
+
+
+	<table name="EkoRodzajPaliwa" name8="EkRodzPa" tablename="EkoRodzajePaliw" config="true" guided="Root" caption="Rodzaj paliwa (środowisko)" tablecaption="Rodzaje paliw (środowisko)" >
+		<key name="WgSymbol" keyprimary="true" keyunique="true">
+			<keycol name="Symbol"/>
+		</key>
+		<col name="Symbol" type="string" length="12" readonly="true" required="true" category="Ogólne" description="Symbol paliwa" />
+		<col name="Nazwa" type="string" length="40" readonly="true" category="Ogólne" description="Nazwa paliwa" />
+		<col name="Gestosc" type="double" readonly="true" category="Ogólne" description="Gęstość paliwa w kg/l" />
+	</table>
+
+	
+	<table name="EkoRodzajSilnika" name8="EkRodzSi" tablename="EkoRodzSilnikow" config="true" guided="Root" caption="Rodzaj silnika" tablecaption="Rodzaje silników" >
+		<key name="WgSymbol" keyprimary="true" keyunique="true">
+			<keycol name="Symbol"/>
+		</key>
+		<col name="Symbol" type="string" length="12" readonly="true" category="Ogólne" description="Symbol silnika" />
+		<col name="Opis" type="string" length="255" readonly="true" category="Ogólne" description="Opis rodzaju silnika" />
+	</table>
+
+	
+	<table name="EkoPaliwoSilnika" name8="EkPalSil" tablename="EkoPaliwaSilnika" config="true" caption="Paliwo silnika" tablecaption="Paliwa silnika">
+		<interface>IRowWithHistory</interface>
+		
+		<key keyprimary="true" keyunique="true" name="WgSilnikPaliwo">
+			<keycol name="Silnik" />
+			<keycol name="Paliwo" />
+		</key>
+
+		<col name="Silnik" type="EkoRodzajSilnika" readonly="true" category="Ogólne" description="Rodzaj silnika" children="Paliwa" />
+		<col name="Paliwo" type="EkoRodzajPaliwa" readonly="true" category="Ogólne" description="Rodzaj paliwa" children="Silniki" />
+	</table>
+
+	
+	<table name="EkoPaliwoStawka" name8="EkPalSta" tablename="EkoPaliwaStawki" caption="Stawka opłaty za emisję" config="true" tablecaption="Stawki opłat za emisję" >
+		<col name="PaliwoSilnika" type="EkoPaliwoSilnika" readonly="true" required="true" keyprimary="true" keyclass="History" keyclasscol="Aktualnosc" children="Historia" relname="Dane historyczne stawek opłat za emisję" relguided="inner" delete="cascade" description="Paliwo silnika" />
+		<col name="Aktualnosc" type="FromTo" required="true" caption="Okres aktualności" description="Okres obowiązywania stawki" />
+		<col name="Stawka" type="currency" caption="Stawka" description="Wysokość stawki za emisję" />
+	</table>
+</module>
+

@@ -1,0 +1,105 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<module xmlns="http://www.enova.pl/schema/business_struct.xsd" name="Deklaracje" namespace="Soneta.Deklaracje" versionName="enova">
+	<import>..</import>
+
+
+	<using>Soneta.Config</using>
+	<using>Soneta.Core</using>
+	<using>Soneta.Kadry</using>
+	<using>Soneta.Kasa</using>
+
+
+	<enum name="FormatEPodpisu"/>
+	<enum name="StatusEDeklaracji"/>
+	<enum name="TypDeklaracji" />
+	<enum name="TypETransmisji"/>
+	<enum name="WersjaDeklaracji"/>
+
+
+	<table name="Deklaracja" tablename="Deklaracje" name8="Deklar" guided="Root" warnings="Off">
+		<interface>IDokumentPlatny</interface>
+		<interface>IDokumentKsiegowalny</interface>
+		<interface>IBazaZrodlaWyplaty</interface>
+
+		<key name="WgTyp">
+			<keycol name="Typ"/>
+			<keycol name="Okres.To"/>
+		</key>
+		<key name="WgDataRozliczenia">
+			<keycol name="Podmiot"/>
+			<keycol name="Typ"/>
+			<keycol name="DataRozliczenia"/>
+		</key>
+
+		<col name="Podmiot" type="IPodmiotKasowy" readonly="set" required="true" category="Ogólne" children="DeklaracjePodmiotu" relname="Deklaracje podmiotu" relright="true" >
+			<keycol name="Typ"/>
+			<keycol name="Okres.To"/>
+		</col>
+		<col name="Deklaracja" type="Deklaracja" readonly="set" category="Ogólne" children="Deklaracje" relname="Subdeklaracje deklaracji" relright="true" />
+		<col name="Zrodlo" type="IZrodloDeklaracji" readonly="true" category="Ogólne" children="Deklaracje" relname="Deklaracje zrodla" />
+		<col name="Definicja" type="DefinicjaDokumentu" required="true" setonlynull="true" category="Dokument" relname="Definicja deklaracji" keyprimary="true" >
+			<keycol name="Okres.To" />
+			<keycol name="Numer.Numer" />
+		</col>
+		<col name="ElementStrukturyFirmy" type="IElementStrukturyFirmy" category="Ogólne" children="DeklaracjeElementuStruktury" relname="Deklaracje elementu struktury" relright="true" readonly="set" >
+			<keycol name="Typ"/>
+			<keycol name="Okres.To"/>
+		</col>
+		<col name="Typ" type="TypDeklaracji" readonly="true" required="true" category="Dokument" />
+		<col name="Wersja" type="WersjaDeklaracji" selector="true" readonly="true" required="true" category="Dokument" />
+		<col name="Bufor" type="boolean" modifier="public virtual" category="Dokument" />
+		<col name="Data" type="date" required="true" modifier="public virtual" category="Dokument" />
+		<col name="Okres" type="FromTo" required="true" modifier="public virtual" category="Dokument" />
+		<col name="Nazwa" type="string" length="30" modifier="public virtual" category="Dokument" />
+		<col name="Numer" name12="Nr" type="NumerDokumentu" category="Dokument" />
+		<col name="Poprawna" type="boolean" category="Dokument" readonly="set">
+			<verifier name="Deklaracja.PoprawnaVerifier" onadded="true"/>
+		</col>
+		<col name="DataRozliczenia" type="date" modifier="public virtual" category="Rozliczenie" />
+		<col name="Pola" type="text" modifier="internal"/>
+		<col name="PrivateData" type="text" modifier="protected"/>
+	</table>
+
+
+	<table name="EDeklaracja" tablename="EDeklaracje" name8="EDeklar" caption="eDeklaracja">
+		<key name="WgTyp" keyprimary="true">
+			<keycol name="TypDeklaracji"/>
+			<keycol name="OkresDeklaracji.To"/>
+			<keycol name="StatusEDeklaracji"/>
+		</key>
+		<key name="WgStatus">
+			<keycol name="StatusEDeklaracji"/>
+			<keycol name="OkresDeklaracji.To"/>
+			<keycol name="TypDeklaracji"/>
+		</key>
+
+		<col name="Deklaracja" type="Deklaracja" cstype ="IEDeklaracjaHost" readonly="true" relname="eDeklaracje deklaracji rozliczeniowych" children="EDeklaracje" relright="true" description="Deklaracja przeznaczona do transmisji" category="Ogólne">
+			<keycol name="StatusEDeklaracji"/>
+		</col>
+		<col name="TypDeklaracji" type="TypDeklaracji" readonly="true" required="true" description="Typ deklaracji" category="Ogólne"/>
+		<col name="OkresDeklaracji" type="FromTo" readonly="true" required="true" description="Okres deklaracji" category="Ogólne"/>
+		<col name="StatusEDeklaracji" type="StatusEDeklaracji" required="true" readonly="set" description="Status eDeklaracji" caption="Status" category="Ogólne"/>
+		<col name="Dokument" type="text" readonly="set" description="Dokument eDeklaracji" category="Ogólne"/>
+		<col name="DokumentPodpisany" type="binary" readonly="set" description="Podpisany dokument eDeklaracji" category="Ogólne"/>
+		<col name="FormatPodpisu" type="FormatEPodpisu" readonly="set"/>
+		<col name="Potwierdzenie" type="text" readonly="set" description="Urzędowe potwierdzenie odbioru" category="Ogólne"/>
+	</table>
+
+
+	<table name="ETransmisja" tablename="ETransmisje" name8="ETrans" caption="eTransmisja">
+		<key name="WgEDeklaracjiTypuCzasu" keyprimary="true" keyunique="true">
+			<keycol name="EDeklaracja"/>
+			<keycol name="Typ"/>
+			<keycol name="Czas"/>
+		</key>
+
+		<col name="EDeklaracja" type="EDeklaracja"  readonly ="true" required="true" relname="Transmicje eDeklaracji" children="ETransmisje" reldefault="false" delete="cascade" description="eDeklaracja transmisji" caption="eDeklaracja" category="Ogólne">
+			<keycol name ="Czas"/>
+		</col>
+		<col name="Typ" type="TypETransmisji" readonly="true" required="true" description="Typ transmisji" category="Ogólne"/>
+		<col name="Czas" type="datetime" readonly="true" required="true" description="Czas transmisji" category="Ogólne"/>
+		<col name="RefUPO" type="text" readonly="true" description="Referencja odbioru/Urzędowe Potwierdzenie Odbioru" caption="eDeklaracja" category="Ogólne"/>
+		<col name="StatusETransmisji" type="int" readonly="true" required="true" description="Status transmisji" caption="Status eTransmisji" category="Ogólne"/>
+		<col name="OpisStatusu" type="text" readonly="true" description="Opis statusu transmisji" category="Ogólne"/>
+	</table>
+</module>

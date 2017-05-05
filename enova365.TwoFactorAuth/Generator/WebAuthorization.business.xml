@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<module xmlns="http://www.enova.pl/schema/business_struct.xsd" name="WebAuthorization" namespace="Soneta.Web.Business.Db" 
+        versionName="enovaNet" versionNumber="100500">
+	<import>../..</import>
+	<using>Soneta.Config</using>
+	<using>Soneta.Core</using>
+	<using>Soneta.Business.App</using>
+	<using>Soneta.Web.Business.App</using>
+	<using>Soneta.Web.Business.Utils</using>
+
+	<enum name="SupportedThemes"/>
+	<enum name="SupportedUICultures"/>
+	<enum name="WebUserType"/>
+	<enum name="ReportsModules"/>
+		  
+	<!-- UŻYTKOWNICY APLIKACJI CZĘŚCI WEB'OWEJ -->
+	<interface name="IWebOperator"/>
+	<table name="WebUser" tablename="WebUsers" guided="Root" config="false">
+		<key name="ByName" keyprimary="true" keyunique="true">
+			<keycol name="Name" />
+		</key>
+		<key name="ByType">
+			<keycol name="Type" />
+		</key>
+		<key name="ByHostActivity">
+			<keycol name="Type" />
+			<keycol name="Locked" />
+		</key>
+    <col name="Name" type="string" length="40" required="true" category="Ogólne"
+			caption="Kod" description="Unikalny kod użytkownika wymagany podczas logowania się do aplikacji web'owej.">
+      <verifier onadded="true" name="WebUser.NameVerifier"/>
+    </col>
+		<col name="Password" type="string" length="32" modifier="protected" />
+		<col name="FirstPassword" type="string" length="32">
+			<verifier onadded="true" name="WebUser.FirstPasswordVerifier"/>
+		</col>
+		<col name="Type" type="WebUserType" required="true" category="Ogólne"
+			 caption="Typ użytkownika" description="Typ użytkownika korzystającego z aplikacji web'owej."/>
+		<col name="Locked" type="boolean" category="Ogólne"
+			caption="Zablokowany" description="Określa, czy konto jest aktualnie zablokowane."/>
+		<col name="FullName" type="string" length="60" category="Ogólne"
+			caption="Nazwa" description="Imię i nazwisko użytkownia."/>
+    <col name="HasLicenceCRN" type="boolean" category="Ogólne" readonly="set" specialaccess="true"
+			caption="Licencja CRM"  description="Licencja CRM przypisana do użytkownika."/>
+    <col name="HasLicenceZMN" type="boolean" category="Ogólne" readonly="set" specialaccess="true"
+			caption="Licencja ZMN"  description="Licencja ZMN przypisana do użytkownika."/>
+    <col name="HasLicencePLN" type="boolean" category="Ogólne" readonly="set" specialaccess="true"
+			caption="Licencja PLN"  description="Licencja PLN przypisana do użytkownika."/>
+    <col name="HasLicencePKN" type="boolean" category="Ogólne" readonly="set" specialaccess="true"
+			caption="Pulpit kierownika"  description="Licencja PKN przypisana do użytkownika."/>
+    <col name="HasLicencePMN" type="boolean" category="Ogólne" readonly="set" specialaccess="true"
+			caption="Pulpit manadżera"  description="Licencja PMN przypisana do użytkownika."/>
+    <col name="HasLicenceKBN" type="boolean" category="Ogólne" readonly="set" specialaccess="true"
+			caption="Pulpit klienta BR"  description="Licencja KBN przypisana do użytkownika."/>
+		<col name="Host" type="IWebOperator" readonly="true" category="Ogólne" delete="cascade" caption="Obiekt powiązany" description="Podpięty obiekt związany z użytkownikiem web (np. Pracownik, KontaktOsoba)" />
+		<col name="Operator" type="Operator" category="Ogólne" delete="cascade" caption="Operator enova365" description="Powiązany z użytkownikiem enovaNet operator" />
+    <col name="HasLicenceWFN" type="boolean" category="Ogólne" readonly="set" specialaccess="true"
+			caption="Licencja WFN"  description="Licencja WFN przypisana do użytkownika."/>
+	</table>
+
+	<!-- Profil użytkownika Web'owego -->
+	<table name="WebProfile" tablename="WebProfiles" name8="WProfile" guided="Root" config="false">
+    <key name="ByProvider" keyprimary="true">
+      <keycol name="ExternalProvider" />
+      <keycol name="ExternalProviderUserId" />
+    </key>
+    <col name="Theme" type="string" length="20" category="Ogólne"
+			caption="Styl" description="Preferowany styl strony."/>
+		<col name="UICulture" type="string" length="5" category="Ogólne"
+			caption="Język" description="Preferowany kultura (język) interface'u."/>
+		<col name="LastActivityDate" type="datetime" category="Ogólne"
+			caption="Ostatnia data aktywności" description="Ostatnia data aktywności użytkownika."/>
+		<col name="PreviousActivityDate" type="datetime" category="Ogólne"
+			caption="Poprzednia data aktywności" description="Poprzednia data aktywności użytkownika."/>
+		<col name="LastActivityIP" type="string" length="20" category="Ogólne"
+			caption="Ostatni adres IP" description="Ostatni adres IP aktywności użytkownika."/>
+		<col name="PreviousActivityIP" type="string" length="20" category="Ogólne"
+			caption="Poprzedni adres IP" description="Poprzedni adres IP aktywności użytkownika."/>
+		<col name="User" type="WebUser" required="true" keyunique="true"
+			 relname="Użytkownik podpięty do profilu." relguided="inner" delete="cascade" relright="true"/>
+		<col name="NumberOfVisits" type="int" category="Ogólne"
+			 caption="Ilość wejść" description="Ilość wejść do aplikacji przez użytkownika."/>
+    <col name="PasswordHistory" type="text" category="Autentykacja" modifier="internal" specialaccess="true"
+		    caption="Historia haseł" description="Historia ostatnich haseł operatora."/>
+    <col name="RecentPasswordChange" type="datetime" category="Autentykacja" readonly="set" specialaccess="true"
+		    caption="Ostatnia zmiana hasła" description="Czas ostatniej zmiany hasła przez operatora."/>
+    <col name="InvalidLoginCounter" type="int" category="Autentykacja" readonly="set" specialaccess="true"
+		    caption="Niepoprawne logowanie" description="Liczba ostatnich błędnych logowań na konto operatora."/>
+    <col name="RecentInvalidLogin" type="datetime" category="Autentykacja" readonly="set" specialaccess="true"
+		    caption="Ostatnie niepoprawne logowanie" description="Czas ostatniego niepoprawnego logowania."/>
+    <col name="AllowExternalProviders" type="boolean" category="Ogólne"
+		    caption="Logowanie zewnętrzne" description="Zezwala na dostęp do enova365 za pośrednictwem loginów zewnętrznych (facebook, google etc.)"/>
+    <col name="ExternalProvider" type="string" length="20" category="Ogólne"
+		    caption="Nazwa zewnętrznego provideraa" description="Nazwa zewnętrznego providera, który odpowiada za wstępną autentykacje użytkownika."/>
+    <col name="ExternalProviderUserId" type="string" length="100" category="Ogólne"
+		    caption="Identyfikator użytkownika dla zewnętrznego providera" description="Identyfikator użytkownika zewnętrznego providera, z którym powiązane jest konto."/>
+  </table>
+
+	<!-- Definicja raportu dla modułu Web'owego -->
+	<table name="WebReport" tablename="WebReports" guided="Root">
+		<key name="ByModule" keyprimary="true" keyunique="true">
+			<keycol name="ReportModule" />
+			<keycol name="Name" />
+		</key>
+		<col name="Name" type="string" length="100" required="true" category="Ogólne"
+			caption="Nazwa" description="Nazwa raportu."/>
+		<col name="Description" type="string" length="255" category="Ogólne"
+			caption="Opis" description="Opis raportu."/>
+		<col name="ReportModule" type="ReportsModules" required="true" category="Ogólne"
+			caption="Moduł" description="Dla jakiego modułu przeznaczony jest raport."/>
+		<col name="Active" type="boolean" category="Ogólne"
+			caption="Aktywny" description="Stan raportu włączony/wyłączony z użycia."/>
+		<col name="VirtualPath" type="string" length="255" required="true" category="Ogólne"
+			caption="Ścieżka wirtualna" description="Ścieżka wirtualna na serwerze IIS dla pliku z definicją raportu."/>
+	</table>
+
+	<!-- Tablica relacyjna raport i przypisane do niego role -->
+	<table name="WebReportRole" tablename="WebReportRoles" caption="Rola raportu" tablecaption="Role raportu">
+		<col name="Report" type="WebReport" required="true" readonly="true"
+				description="Raport do którego przypisano rolę"
+				relname="Role uprawnień"
+				keyprimary="true"
+				keyunique="true"
+				delete="cascade"
+				relguided="inner"
+				children="Roles"
+			>
+			<keycol name="RoleGuid" />
+		</col>
+		<col name="RoleGuid" type="guid" required="true" readonly="true"/>
+	</table>
+
+</module>

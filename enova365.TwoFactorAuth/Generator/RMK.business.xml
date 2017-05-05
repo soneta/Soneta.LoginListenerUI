@@ -1,0 +1,99 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<module xmlns="http://www.enova.pl/schema/business_struct.xsd" name="RMK" namespace="Soneta.RMK" versionName="enova">
+	<import>../..</import>
+
+	<using>Soneta.Core</using>
+	<using>Soneta.Config</using>
+	<using>Soneta.Waluty</using>
+	<using>Soneta.EwidencjaVat</using>
+
+
+	<enum name="NaliczanieRMK"/>
+	<enum name="OkresRozliczenRMK"/>
+	<enum name="AlgorytmRMK"/>
+	<enum name="TypObrotuRMK"/>
+	<enum name="StatusObrotuRMK"/>
+
+
+	<table name="KosztRMK" tablename="KosztyRMK" tablecaption="Koszty RMK" guided="Root">
+		<interface>IElementSlownika</interface>
+		<interface>IZrodloPodzielnikaKosztow</interface>
+
+		<key name="WgSymbol" keyunique="true" keyprimary="true">
+			<keycol name="Symbol"/>
+		</key>
+
+		<key name="WgGrupaKosztow">
+			<keycol name="GrupaKosztow"/>
+		</key>
+
+		<col name="Symbol" type="string" length="20" required="true" category="Ogólne" description="Symbol kosztu"/>
+		<col name="Nazwa" type="string" length="240" required="true" category="Ogólne" description="Nazwa kosztu"/>
+		<col name="Oddzial" type="OddzialFirmy" category="Ogólne" description="Oddział firmy" relright="true" >
+			<verifier name="OddzialRightsVerifier" onadded="true"/>
+			<verifier name="OddzialRequiredVerifier" onadded="true"/>
+		</col>
+		<col name="Opis" type="text" category="Ogólne" description="Opis kosztu"/>
+		<col name="Nieaktywny" type="boolean" category="Ogólne" description="Aktywność kosztu"/>
+		<col name="CentrumKosztow" type="CentrumKosztow" category="Ogólne" description="Centrum kosztów"/>
+		<col name="GrupaKosztow" type="string" length="128" category="Ogólne" description="Grupa kosztów">
+			<attribute>Dictionary("GrupaKosztowRMK", ManualList=true)</attribute>
+		</col>
+		<!-- PARAMETRY ROZLICZANIA -->
+		<col name="RozliczajOdDnia" type="date" category="Rozliczanie" description="Określa od jakiej daty naliczane są rozliczenia"/>
+		<col name="Naliczanie" type="NaliczanieRMK" category="Rozliczanie" description="Określa od jakiej wartości naliczane są rozliczenia"/>
+		<col name="OkresRozliczen" type="OkresRozliczenRMK" category="Rozliczanie" description="Określa w jakich okresach naliczane są rozliczenia"/>
+		<col name="PierwszyOdpisProporcjonalny" type="boolean" category="Rozliczanie" description="Określa, że pierwszy odpis będzie proporcjonalny do ilości dni" />
+		<col name="MinimalnaKwotaOdpisu" type="decimal" category="Rozliczanie" description="Określa kwotę poniżej której nie będą pozostawiane odpisy na kolejną ratę" />
+		<!-- ALGORYTM -->
+		<col name="Algorytm" type="AlgorytmRMK" category="Rozliczanie" description="Określa rodzaj algorytmu, wg którego naliczna są rozliczenia" >
+			<verifier name="KosztRMK.AlgorithmVerifier" onadded="true" />
+		</col>
+		<col name="ParametrAlgorytmu" type="decimal" category="Rozliczanie" description="Określa parametr rozliczeń wg wybranego algorytmu" >
+			<verifier name="KosztRMK.AlgorithmVerifier" />
+		</col>
+		<col name="AlgorytmPodatkowy" type="AlgorytmRMK" category="Rozliczanie" description="Określa rodzaj algorytmu, wg którego naliczna są rozliczenia" >
+			<verifier name="KosztRMK.AlgorithmPodVerifier" onadded="true" />
+		</col>
+		<col name="ParametrAlgorytmuPodatkowego" type="decimal" category="Rozliczanie" description="Określa parametr rozliczeń wg wybranego algorytmu" >
+			<verifier name="KosztRMK.AlgorithmPodVerifier" />
+		</col>
+	</table>
+
+
+	<table name="DokumentRMK" tablename="DokumentyRMK" tablecaption="Dokumenty RMK" guided="Root">
+		<interface>IDokumentKsiegowalny</interface>
+
+		<key name="WgDataDokumentu" keyprimary="true">
+			<keycol name="DataDokumentu"/>
+		</key>
+
+		<col name="Numer" type="NumerDokumentu" category="Ogólne" description="Numer dokumentu"/>
+		<col name="Oddzial" type="OddzialFirmy" category="Ogólne" description="Oddział firmy" relright="true" >
+			<verifier name="OddzialRightsVerifier" onadded="true"/>
+			<verifier name="OddzialRequiredVerifier" onadded="true"/>
+		</col>
+		<col name="Definicja" type="DefinicjaDokumentu" required="true" category="Ogólne" description="Definicja dokumentu"/>
+		<col name="DataDokumentu" type="date" required="true" category="Ogólne" description="Data dokumentu"/>
+		<col name="DataOperacji" type="date" required="true" category="Ogólne" description="Data operacji"/>
+		<!-- ISO -->
+		<col name="NumerProceduryISO" type="string" length="20" readonly="set" category="ISO" description="Numer procedury ISO" />
+	</table>
+
+
+	<table name="ObrotRMK" tablename="ObrotyRMK" tablecaption="Obroty RMK">
+		<col name="Typ" type="TypObrotuRMK" readonly="true" selector="true" category="Ogólne" description="Typ obrotu"/>
+		<col name="Koszt" type="KosztRMK" required="true" readonly="true" category="Ogólne" description="Koszt obrotu" keyprimary="true" children="Obroty">
+			<keycol name="Typ"/>
+			<keycol name="Data"/>
+		</col>
+		<col name="Ewidencja" type="DokEwidencji" relname="Wartosci RMK" children="WartosciRMK" category="Ogólne" description="Ewidencja dokumentu obrotu"/>
+		<col name="Dokument" type="DokumentRMK" readonly="true" children="Pozycje" delete="cascade" category="Ogólne" description="Dokumentu RMK obrotu"/>
+		<col name="StatusObrotu" type="StatusObrotuRMK" category="Ogólne" description="Status obrotu"/>
+		<col name="Data" type="date" required="true" category="Ogólne" description="Data obrotu"/>
+		<col name="WartoscBilansowa" type="decimal" category="Ogólne" description="Wartość bilansowa obrotu"/>
+		<col name="WartoscPodatkowa" type="decimal" category="Ogólne" description="Wartość podatkowa obrotu"/>
+		<col name="Opis" type="string" length="255" category="Ogólne" description="Opis obrotu"/>
+	</table>
+</module>
+

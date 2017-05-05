@@ -1,0 +1,1275 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<module xmlns="http://www.enova.pl/schema/business_struct.xsd" name="Zadania" namespace="Soneta.Zadania" versionName="enova">
+  <import>..</import>
+
+  <using>Soneta.Business.App</using>
+  <using>Soneta.Core</using>
+  <using>Soneta.Config</using>
+  <using>Soneta.CRM</using>
+  <using>Soneta.Kasa</using>
+  <using>Soneta.Waluty</using>
+  <using>Soneta.Towary</using>
+  <using>Soneta.Handel</using>
+  <using>Soneta.Magazyny</using>
+  <using>Soneta.SrodkiTrwale</using>
+  <using>Soneta.Zadania.Budzetowanie</using>
+  <using>Soneta.Zadania.Podmioty_Zadania</using>
+
+  <!-- DEFINICJA KAMPANII -->
+
+  <enum name="TypKontroli"/>
+  <enum name="ModulyNet"/>
+
+  <table name="DefKampania" tablename="DefKampanii" name8="DefKamp" guided="Root" config="true" tablecaption="Definicje kampanii CRM" caption="Definicja kampanii CRM">
+    <key name="WgSymbolu" keyunique="true" keyprimary="true">
+      <keycol name="Symbol" />
+    </key>
+    <key name="WgNazwy" keyunique="true">
+      <keycol name="Nazwa" />
+    </key>
+    <!--  OGÓLNE -->
+    <col name="Symbol" type="string" length="12" required="true" category="Ogólne" important="true" caption="Symbol" description="Skrótowa nazwa definicji kampanii wykorzystywana do wyszukiwania definicji oraz numeracji projektów CRM." />
+    <col name="Nazwa" type="string" length="30" required="true" category="Ogólne" important="true" caption="Nazwa" description="Pełna nazwa definicji kampanii." />
+    <col name="NazwaZakladkiUz" type="string" length="50" category="Ogólne" caption="Nazwa zakładki użytkownika" />
+    <col name="Blokada" type="boolean" category="Ogólne" caption="Zablokowana" description="Określa zablokowanie definicji. Zablokowane definicje kampanii nie będą wyświetlane w liście wyboru." />
+    <col name="Domyslna" type="boolean" category="Ogólne" caption="Domyślna" description="Określa, że jest to domyślna definicja kampanii." />
+    <col name="Numeracja" type="DefinicjaNumeracji" category="Definicja" caption="Numeracja" description="Ustawienia określające sposób numeracji kampanii." />
+    <col name="KontrolaDat" type="TypKontroli"  category="Definicja"  caption="Typ kontroli dat" description="Określa typ kontroli dat na kampanii."  />
+    <col name="KontrolaStanu" type="TypKontroli"  category="Definicja"  caption="Typ kontroli stanu" description="Określa typ kontroli stanu na kampanii."  />
+    <col name="FormularzUzytkownika" type="boolean" category="Ogólne" caption="Formularz użytkownika" description="Formularz użytkownika." />
+    <col name="XmlForm" type="text" category="Definicja" caption="Definicja zakładki użytkownika." />
+  </table>
+
+  <!-- KAMPANIE -->
+
+  <table name="Kampania" tablename="Kampanie" name8="Kampanie" tablecaption="Kampanie CRM" caption="Kampania CRM" guided="Root">
+
+    <col name="Definicja" type="DefKampania" required="true" category="Numer" description="Definicja kampanii"  relname="Definicja kampanii">
+      <keycol name="DataOd" />
+    </col>
+
+    <key name="WgNazwy">
+      <keycol name="Nazwa" />
+    </key>
+
+
+    <col name="Numer" type="NumerDokumentu" category="Numer"/>
+    <col name="Seria" type="string" length="32" category="Numer" caption="Seria" description="Seria kampanii." />
+    <col name="Nazwa" type="string" length="80" category="Opis" required="true" caption="Nazwa kampanii" description="Krótka nazwa kampanii, na podstawie której będzie można ją wyszukiwać">
+      <attribute>Dictionary("Zad.Kamp.Nazwa", ManualList=true)</attribute>
+    </col>
+
+    <col name="Opis" type="text" category="Opis" caption="Opis" description="Dokładny opis kampanii"/>
+    <col name="Cel" type="text" category="Opis" caption="Cel" description="Opis celu prowadzenia kampanii CRM"/>
+
+    <col name="DataOd" type="date" category="Kampania" caption="Data rozpoczęcia" description="Data rozpoczęcia kampanii">
+      <verifier name="Kampania.KampaniaDataVerifier" onadded="false"/>
+      <verifier name="Kampania.KampaniaProjektyDatyVerifier" onadded="false" />
+    </col>
+
+    <col name="DataDo" type="date" category="Kampania" caption="Data zakończenia" description="Planowana data zakończenia kampanii">
+      <verifier name="Kampania.KampaniaDataVerifier" onadded="true"/>
+      <verifier name="Kampania.KampaniaProjektyDatyVerifier" onadded="false" />
+    </col>
+
+    <col name="Zakonczona" type="boolean" category="Kampania" caption="Zakończona" description="Kampania zakończona">
+      <verifier name="Kampania.KampaniaProjektyStanyVerifier" onadded="false" />
+    </col>
+
+    <col name="Prowadzacy" type="Operator" category="Kampania" caption="Odpowiedzialny" description="Osoba odpowiedzialna za prowadzenie kampanii" keyprimary="true" />
+    <col name="WartoscWyliczana" type="boolean" category="Wartość" caption="Wartość wyliczana" description="Zakładane wartości wyliczane na podstawie projektów"/>
+
+    <col name="Przychod" type="currency" category="Wartość" caption="Sprzedaż" description="Zakładana wartość sprzedaży."/>
+    <col name="Koszt" type="currency" category="Wartość" caption="Koszt" description="Zakładane koszty prowadzenia kampanii."/>
+    <col name="Skutecznosc" type="percent" category="Wartość" caption="Skuteczność" description="Zakładana skuteczność kampanii."/>
+    <!-- 7.2 -->
+    <col name="OddzialFirmy" type="OddzialFirmy" category="Ogólne" caption="Oddział firmy" description="Oddział firmy do którego przypisana jest kampania." />
+  </table>
+
+  <!-- DEFINICJA PROJEKTU -->
+  <table name="DefProjektu" tablename="DefProjektow" name8="DefProj"  config="true" tablecaption="Definicje projektów CRM" caption="Definicja projektu CRM" guided="Root">
+    <interface>IRightsSource</interface>
+    <key name="WgSymbolu" keyunique="true" keyprimary="true">
+      <keycol name="Symbol" />
+    </key>
+    <key name="WgNazwy" keyunique="true">
+      <keycol name="Nazwa" />
+    </key>
+    <!-- OGÓLNE -->
+    <col name="Symbol" type="string" length="12" required="true" category="Ogólne" important="true" caption="Symbol" description="Skrótowa nazwa definicji projektu wykorzystywana do wyszukiwania definicji oraz numeracji projektów CRM." />
+    <col name="Nazwa" type="string" length="60" required="true" category="Ogólne" important="true" caption="Nazwa" description="Pełna nazwa definicji projektu." />
+    <col name="NazwaZakladkiUz" type="string" length="50" category="Ogólne" caption="Nazwa zakładki użytkownika" />
+    <col name="Blokada" type="boolean" category="Ogólne" caption="Zablokowana"  description="Określa zablokowanie definicji. Zablokowane definicje dokumentów nie będą wyświetlane w liście wyboru." />
+    <col name="Domyslna" type="boolean" category="Ogólne" caption="Domyślna" description="Określa, że jest to domyślna definicja projektu" />
+    <col name="Numeracja" type="DefinicjaNumeracji" category="Definicja" caption="Numeracja" description="Ustawienia określające sposób numeracji projektów." />
+    <col name="KontrolaDat" type="TypKontroli"  category="Definicja"  caption="Typ kontroli dat" description="Określa typ kontroli dat na projekcie."  />
+    <col name="KontrolaStanu" type="TypKontroli"  category="Definicja"  caption="Typ kontroli stanu" description="Określa typ kontroli stanu na projekcie."  />
+    <col name="FormularzUzytkownika" type="boolean" category="Ogólne" caption="Formularz użytkownika" description="Formularz użytkownika." />
+    <col name="XmlForm" type="text" category="Definicja" caption="Definicja zakładki użytkownika." />
+    <col name="ZapisNaBiezaco" type="boolean" category="Ogólne" caption="Zapis na bieżąco sesji" description="Jeśli możliwe, sesja zostanie zapisana najszybciej jak to możliwe." />
+  </table>
+
+  <!-- ETAPY DEFINICJI PROJEKTOW -->
+
+  <table name="EtapDefProjektu" tablename="EtapyDefProjektu" name8="EtapDPro" config="true" tablecaption="Etapy definicji projektu CRM" caption="Etap definicji projektu CRM">
+
+    <col name="Definicja" type="DefProjektu"  required="true" category="Definicja"
+			description="Definicja projektu, do której jest przypisany ten etap"
+			children="EtapyDefProjektu"
+			relname="Definicja projektu"
+			delete="cascade"
+			relguided="inner"
+			relright="false"
+			keyprimary="true"
+			keyclass="Lp" keyclasscol="Lp"
+			readonly="true"
+			/>
+    <col name="Nazwa" type="string" length="30" required="true" category="Ogólne" caption="Nazwa" description="Nazwa etapu projektu" />
+    <col name="Lp" type="int" required="true" batchfield="false" category="Ogólne" caption="Lp" description="Liczba porządkowa etapu w ramach projektu." />
+    <col name="Ident" type="int" category="Ogólne" required="true" readonly="set" caption="Identyfikator" description="Identyfikator etapu na definicji projektu. Wykorzystywany w relacji do projektu." />
+    <col name="Realizacja" type="percent" category="Ogólne" caption="Realizacja" description="Stopień realizacji projektu na wskazanym etapie." />
+    <col name="CzasTrwania" type="int" category="Ogólne" caption="Domyślny czas trwania etapu" description="Domyślny czas trwania etapu." />
+  </table>
+
+  <!-- STANY REALIZACJI PROJEKTU -->
+  <table name="StanProjektu" tablename="StanyProjektu" name8="StanProj" config="true" tablecaption="Stany realizacji projektu CRM" caption="Stan realizacji projektu CRM">
+
+    <col name="Definicja" type="DefProjektu" required="true" category="Definicja"
+			description="Definicja projektu, do której jest przypisany ten stan"
+			children="Stany"
+			relname="Definicja projektu"
+			delete="cascade"
+			relguided="inner"
+			relright="false"
+			keyprimary="true"
+			keyclass="Lp" keyclasscol="Lp"
+			readonly="true"
+            />
+
+    <col name="Lp" type="int" required="true" batchfield="false" category="Ogólne" caption="Lp" description="Liczba porządkowa stanu realizacji w ramach projektu." />
+    <col name="Ident" type="int" category="Ogólne" required="true" readonly="set" caption="Identyfikator" description="Identyfikator stanu na definicji projektu. Wykorzystywany w relacji do projektu." />
+    <col name="Blokada" type="boolean" category="Ogólne" caption="Zablokowany"  description="Określa zablokowanie stanu. Zablokowane stany dokumentów nie będą wyświetlane w liście wyboru." />
+    <col name="Nazwa" type="string" length="30" required="true" category="Ogólne" caption="Nazwa" description="Nazwa stanu realizacji projektu" />
+    <col name="Aktywny" type="boolean" category="Ogólne" caption="Aktywny" description="Wskazuje, czy projekt w tym stanie jest aktywny (otwarty)." />
+  </table>
+
+  <!--  DEFINICJA ZADANIA CRM -->
+  <enum name="RodzajZadania" />
+  <enum name="RodzajFormularzaZadania" />
+  <enum name="RodzajWysylki" />
+  <enum name="NetDostep" />
+  <enum name="WartoscDokCRM" />
+
+  <table name="DefZadania" tablename="DefZadan" name8="DefZadan" guided="Root" config="true" caption="Definicja zadania CRM" tablecaption="Definicje zadań CRM">
+    <interface>IRightsSource</interface>
+    <key name="WgSymbolu" keyunique="true" keyprimary="true">
+      <keycol name="Symbol" />
+    </key>
+
+    <key name="WgRodzaju" keyunique="true">
+      <keycol name="Rodzaj" />
+      <keycol name="Symbol" />
+    </key>
+
+    <key name="WgKategoriaSymbol">
+      <keycol name="Kategoria" />
+      <keycol name="Symbol" />
+    </key>
+
+    <col name="Symbol" type="string" length="12" required="true" category="Ogólne" caption="Symbol" description="Skrótowa nazwa definicji zadania wykorzystywana do wyszukiwania definicji oraz numeracji zadań CRM." />
+    <!-- Seria; 7.2; TID: 6587; -->
+    <col name="DrugiSymbol" type="string" length="12" category="Ogólne" caption="Seria" description="Seria aktywności." />
+    <col name="Rodzaj" type="RodzajZadania" required="true"  category="Ogólne" caption="Rodzaj zadania" description="Rodzaj definicji zadania. Może być zadanie lub zdarzenie." />
+    <col name="Grupowe" type="DefZadania" category="Ogólne" caption="Zadanie grupowe" description="Definicja podrzędnego zadania grupowego." />
+    <col name="Nazwa" type="string" length="30" category="Ogólne" caption="Nazwa" description="Pełna nazwa definicji zadania" />
+    <col name="NazwaZakladkiUz" type="string" length="50" category="Ogólne" caption="Nazwa zakładki użytkownika" />
+    <col name="Blokada" type="boolean" category="Ogólne" caption="Zablokowana" description="Określa zablokowanie definicji. Zablokowane definicje zadań nie będą wyświetlane w liście wyboru." />
+    <col name="Domyslna" type="boolean" category="Ogólne" caption="Domyślna" description="Określa, że jest to domyślna definicja zadania" />
+    <col name="Formularz" type="RodzajFormularzaZadania" category="Ogólne" caption="Rodzaj formularza" description="Określa sposób wyświetlania formularza" />
+    <col name="Powiazane" type="DefZadania" category="Ogólne" caption="Zadanie powiązane" description="Przy zamknięciu zadania generuje automatycznie nowe zadanie o zadanej definicji" />
+    <col name="DefinicjaDokHandlowego" type="DefDokHandlowego" caption="Definicja dokumentu handlowego" description="Domyślna definicja dokumentu handlowego generowanego dla tego zadania" >
+      <verifier name="DefZadania.MagazynDefDokHanExistsVerifier" onadded="false"/>
+    </col>
+    <col name="DefDokHanUslugi" type="DefDokHandlowego" caption="Definicja dokumentu handlowego" description="Domyślna definicja dokumentu handlowego dla usług dla wypożyczenia/zlecenia serwisowego" >
+      <verifier name="DefZadania.MagazynDefDokHanExistsVerifier" onadded="false"/>
+    </col>
+    <col name="Numeracja" type="DefinicjaNumeracji" category="Definicja" caption="Numeracja" description="Ustawienia określające sposób numeracji zadań" />
+    <col name="Historia" type="boolean" category="Opcje" caption="Czy zapisywać historię zmian" />
+    <col name="Xml" type="text" category="Definicja" caption="Definicja zakładki użytkownika." />
+
+    <col name="MailDoKontrahenta" type="RodzajWysylki" category="Mail" caption="Mail do kontrahenta." description="Określa, czy mail zostanie wysłany do kontrahenta." />
+    <col name="MailDoWykonujacego" type="RodzajWysylki" category="Mail" caption="Mail do wykonującego." description="Określa, czy mail zostanie wysłany do wykonującego." />
+    <col name="MailDoProwadzacego" type="RodzajWysylki" category="Mail" caption="Mail do prowadzącego." description="Określa, czy mail zostanie wysłany do prowadzącego." />
+
+    <col name="MailPrzyUtworzeniu" type="boolean" category="Mail" caption="Mail przy utworzeniu." description="Określa, czy mail zostanie wysłany przy utworzeniu." />
+    <col name="MailPrzyZmianie" type="boolean" category="Mail" caption="Mail przy zmianie." description="Określa, czy mail zostanie wysłany przy zmianie." />
+    <col name="MailPrzyZamknieciu" type="boolean" category="Mail" caption="Mail przy zamknięciu." description="Określa, czy mail zostanie wysłany przy zamknięciu." />
+    
+    <col name="RodzajAdresu" type="SlownikElem" caption="Rodzaj adresu" description="Rodzaj adresu e-mail."/>
+    <col name="WysylkaNaAdres" type="WysylkaNaAdres" caption="Adresy do wysyłki" description="Określa adresy do wysyłki." />
+    
+    <!-- 5.3 -->
+    <col name="OpisHTML" type="boolean" category="Opcje" caption="Opis w postaci HTML." description="Określa, czy opis będzie w postaci HTML." />
+    <!-- 6.0 -->
+    <col name="OknoPotwierdzenia" type="boolean" category="Mail" caption="Okno potwierdzenia email" description="Określa, czy przy wysyłce pojawi się okno potwierdzenia." />
+    <col name="Calodzienne" type="boolean" category="Opcje" caption="Zadanie całodzienne" description="Określa, czy zadanie jest całodzienne." />
+    <col name="InicjujNazwe" type="boolean" category="Opcje" caption="Inicjuje nazwę zadania" description="Określa, czy zadanie ma zainicjowaną nazwę z definicji." />
+    <!-- 6.2 -->
+    <col name="DefDlaOutlook" type="boolean" category="Opcje" caption="Definicja dla importu z Outlook 2007" description="Określa, czy definicja jest dla importu maili z Outlook 2007." />
+    <!-- 7.0 -->
+    <col name="NetDostep" type="NetDostep" category="Opcje" caption="Dostęp w enova.NET" description="Możliwość dostępu kontrahentów do zadań w aplikacji enova.NET." />
+    <col name="NetDodawanie" type="boolean" category="Opcje" caption="Dodawanie w enova.NET" description="Możliwość dodawania zadań przez kontrahentów w aplikacji enova.NET" />
+    <col name="XmlNET" type="text" category="Definicja" caption="Definicja zakładki użytkownika w enovaNet." />
+    <!-- 7.1 -->
+    <col name="FiltrZasobu" type="string" length="200" category="Opcje" caption="Filtr zasobu" description="Filtr wg jakiego wyświetlana jest lista zasobów IZasobCRM." />
+    <col name="WartoscDokCRM" type="WartoscDokCRM" category="Opcje" caption="Wartość na dokumencie CRM." description="Określa, rodzaj wartości na dokumencie CRM." />
+    <col name="Magazyn" type="Magazyn" caption="Domyślny magazyn" description="Określa, domyślny magazyn." >
+      <verifier name="DefZadania.MagazynDefDokHanExistsVerifier" onadded="false"/>
+    </col>
+    <!--7.5-->
+    <col name="NieWymagajCech" type="boolean" category="Inne" description="Określ, czy nie sprawdzać wymagalności cech aktywności." />
+    <col name="CechyWymagane" type="text" category="Inne" description="Reprezentuje listę cech wymaganych na aktywnościach." />
+    <col name="CechyKopiowane" type="text" category="Inne" description="Reprezentuje listę cech kopiowanych z aktywności nadrzędnej." />
+    <col name="NetModul" type="ModulyNet" category="Opcje" caption="Moduł enovaNet" description="Dla jakiego modułu enovaNet definicja jest widoczna" />
+    <!--7.6-->
+    <col name="PowiazCzasWykonania" type="boolean" category="Inne" description="Powiąż czas wykonania z rozpoczęciem i zakończeniem." />
+    <col name="StoperDostepny" type="boolean" category="Inne" description="Udostępnij funkcje stopera." />
+    <col name="StoperAuto" type="boolean" category="Inne" description="Automatycznie uruchamiaj stoper." />
+    <col name="Code" type="text" caption="Kod kalkulatora dla zadania" description="Kod klasy kalkulatora dla zadania." />
+    <col name="RoleGuid" type="guid" category="Ogólne" description="Domyślna rola dla której przypisane jest zadanie." />
+    <col name="Algorytm" type="boolean" category="Inne" description="Określa czy istnieje algorytm dla zadania." />
+    <col name="KontrolaDostUrz" type="TypKontroli"  category="Definicja"  caption="Typ kontroli dostępności urządzenia" description="Określa typ kontroli dostępności urządzenia."  />
+    <!--7.7-->
+    <col name="Kategoria" type="KategoriaAkt"  category="Inne"  caption="Kategoria definicji" description="Kategoria definicji."  />
+
+    <!--[11566][8.0][CRM 8.0]: Generowanie rezerwacji zasobów - uzaleznienie od flagi - Zasoby etap 3-->
+    <col name="KontrolaCzasuZasobu" type="TypKontroli" category="Opcje" caption="Kontrola czasu zasobów" description="Określa sposób kontroli czasu zasobów przypisanych do zadania." />
+
+    <!--[12007][8.2][CRM 8.2]: Kolorowanie na liscie zadan uzaleznione od parametrow (warunków) na definicji Aktywności-->
+    <col name="DefKolorow" type="text" category="Kolory" caption="Definicja warunków kolorowania wierszy" description="Określa definicję warunków kolorowania wierszy." />
+
+    <!--[12361][8.2][CRM 8.2]: Rozbudowa kalendarzy CRM-->
+    <col name="AlgorytmNazwyIOpisu" type="text" caption="Kod kalkulatora dla nazwy i opisu zadania w kalendarzu" description="Kod kalkulatora dla nazwy i opisu zadania w kalendarzu." />
+    <col name="Synchronizowana" type="boolean" caption="Synchronizacja z kalendarzami Google" description="Określa czy zadania definicji mają być synchronizowane z kalendarzami Google." />
+  </table>
+
+  <!--  STANY REALIZACJI ZADANIA -->
+  <table name="StanZadania" tablename="StanyZadania" name8="StanZad" config="true" tablecaption="Stany realizacji zadań CRM" caption="Stan realizacji zadania CRM">
+    <!--  OGÓLNE -->
+    <col name="Definicja" readonly="true" type="DefZadania" required="true" category="Ogólne" description="Definicja zadania, do której jest przypisany ten stan" children="Stany" relname="Definicja zadania" delete="cascade" relguided="inner" relright="false" keyprimary="true" keyclass="Lp" keyclasscol="Lp" />
+    <!-- readonly="true" -->
+    <col name="Lp" type="int" required="true" batchfield="false" category="Ogólne" caption="Lp" description="Liczba porządkowa stanu realizacji w ramach zadania." />
+    <col name="Ident" readonly="set" type="int" category="Ogólne" required="true" caption="Identyfikator" description="Identyfikator stanu na definicji zadania. Wykorzystywany w relacji do zadania." />
+    <col name="Nazwa" type="string" length="30" required="true" category="Ogólne" caption="Nazwa" description="Nazwa stanu realizacji zadania" />
+    <col name="Aktywny" type="boolean" category="Ogólne" caption="Aktywny" description="Wskazuje, czy zadanie w tym stanie jest aktywne (otwarte)." />
+    <col name="Blokada" type="boolean" category="Ogólne" caption="Zablokowany"  description="Określa zablokowanie stanu. Zablokowane stany dokumentów nie będą wyświetlane w liście wyboru." />
+  </table>
+
+
+  <!--  PRIORYTETY ZADANIA -->
+  <table name="PriorytetZadania" tablename="PriorytetyZadan" name8="PrioZad" config="true" tablecaption="Priorytety zadań CRM" caption="Priorytet zadania CRM">
+    <!--  OGÓLNE -->
+    <col name="Definicja" type="DefZadania" readonly="true" required="true" category="Definicja" description="Definicja zadania, do której jest przypisana waga" children="Priorytety" relname="Definicja zadania" delete="cascade" relguided="inner" relright="false" keyprimary="true" keyclass="Lp" keyclasscol="Lp" />
+    <!-- readonly="true" -->
+    <col name="Lp" type="int" required="true" batchfield="false" category="Ogólne" caption="Lp" description="Liczba porządkowa priorytetu w ramach zadania." />
+    <col name="Ident" readonly="set" type="int" category="Ogólne" required="true" caption="Identyfikator" description="Identyfikator priorytetu na definicji zadania. Wykorzystywany w relacji do zadania." />
+    <col name="Nazwa" type="string" length="30" required="true" category="Ogólne" caption="Nazwa" description="Nazwa priorytetu zadania" />
+    <col name="Blokada" type="boolean" category="Ogólne" caption="Zablokowany"  description="Określa zablokowanie stanu. Zablokowane stany dokumentów nie będą wyświetlane w liście wyboru." />
+  </table>
+
+
+  <!-- ETAPY PROJEKTOW -->
+  <table name="EtapProjektu" tablename="EtapyProjektu" name8="EtapProj" tablecaption="Etapy projektu CRM" caption="Etap projektu CRM">
+    <col name="Nazwa" type="string" length="30" required="true" category="Ogólne" caption="Nazwa" description="Nazwa etapu projektu" />
+
+    <key name="WgNazwa">
+      <keycol name="Nazwa" />
+    </key>
+
+    <col name="Projekt" type="Projekt"   category="Definicja"
+		description="Projekt, do której jest przypisany ten etap"
+		children="EtapyProjektu"
+		required="true"
+		relname="Projektu"
+		delete="cascade"
+		relguided="inner"
+		relright="true"
+		keyprimary="true"
+		keyclass="Lp" keyclasscol="Lp" />
+
+    <col name="Lp" type="int" required="true" batchfield="false" category="Ogólne" caption="Lp" description="Liczba porządkowa etapu w ramach projektu."/>
+    <col name="Ident" type="int" category="Ogólne" required="true" caption="Identyfikator" description="Identyfikator etapu na definicji projektu. Wykorzystywany w relacji do projektu."/>
+    <col name="Blokada" type="boolean" category="Ogólne" caption="Zablokowany"  description="Określa zablokowanie etapu. Zablokowane etapy dokumentów nie będą wyświetlane w liście wyboru." />
+    <col name="Realizacja" type="percent" category="Ogólne" caption="Realizacja" description="Stopień realizacji projektu na wskazanym etapie." />
+    <col name="CzasTrwania" type="int" category="Ogólne" caption="Czas trwania etapu" description="Czas trwania etapu." />
+    <col name="Prowadzacy" type="Operator" category="Ogólne" caption="Odpowiedzialny" description="Osoba odpowiedzialna za prowadzenie projektu." />
+
+    <!--
+    <col name="DataOd" type="date" category="Ogólne" caption="Data rozpoczęcia" description="Data rozpoczęcia etapu projektu." />
+    <col name="DataDo" type="date" category="Ogólne" caption="Data zakończenia" description="Planowana data zakończenia etapu projektu." />
+    -->
+
+  </table>
+
+  <!-- PROJEKTY -->
+  <table name="Projekt" tablename="Projekty" name8="Projekty" tablecaption="Projekty CRM" caption="Projekt CRM"  guided="Root">
+    <interface>IBudzetowany</interface>
+    <interface>IEmailElement</interface>
+    <key name="WgNazwy" keyprimary="true" >
+      <keycol name="Nazwa" />
+    </key>
+
+    <col name="Definicja"
+			 type="DefProjektu"
+			 category="Numer"
+			 description="Definicja projektu."
+			 required="true"
+			 relname="Definicja projektu"
+			 relright="true">
+      <keycol name="DataOd" />
+    </col>
+
+    <col name="Kampania" type="Kampania" required="false" category="Projekt" description="Kampania, z którą powiązany jest projekt"	children="Projekty" relname="Kampania">
+      <verifier name="Projekt.ProjektKampaniaDatyVerifier" onadded="false" />
+      <verifier name="Projekt.ProjektKampaniaStanyVerifier" onadded="false" />
+    </col>
+    <col name="Kontrahent" type="IKontrahent" category="Kontrahent" description="Kontrahent, któremu przyporządkowany jest projekt." children="Projekty" relname="Kontrahent" modifier="public virtual">
+      <keycol name="DataOd" />
+      <verifier name="Projekt.KontrahentPrzedstawicielVerifier" onadded="true"/>
+    </col>
+
+    <col name="EtapIdent" type="int" category="Stan"  caption="Etap" description="Etap na jakim znajduje się projekt. Relacja do property Ident w liście etapów powiązanych z projektu." />
+
+    <col name="StanProjektu" type="StanProjektu" category="Stan" description="Stan projektu." />
+    <col name="Numer" type="NumerDokumentu" category="Numer"/>
+    <col name="Seria" type="string" length="32" category="Numer" caption="Seria" description="Seria projektu." />
+    <col name="Nazwa" type="string" length="80" category="Opis" required="true" caption="Nazwa projektu" description="Krótka nazwa projektu, na podstawie której będzie można go wyszukiwać" >
+      <attribute>Dictionary("Zad.Proj.Nazwa", ManualList=true)</attribute>
+    </col>
+    <col name="Opis" type="text" category="Opis" caption="Opis" description="Dokładny opis projektu" />
+    <col name="Cel" type="text" category="Opis" caption="Cel" description="Opis celu prowadzenia projektu" />
+
+    <col name="DataOd" type="date" category="Projekt" caption="Data rozpoczęcia" description="Data rozpoczęcia projektu">
+      <verifier name="Projekt.ProjektDataVerifier" onadded="true"/>
+      <verifier name="Projekt.ProjektKampaniaDatyVerifier" onadded="false" />
+      <verifier name="Projekt.ProjektZadaniaDatyVerifier" onadded="false" />
+    </col>
+
+    <col name="DataDo" type="date" category="Projekt" caption="Data zakończenia" description="Planowana data zakończenia projektu">
+      <verifier name="Projekt.ProjektDataVerifier" onadded="true"/>
+      <verifier name="Projekt.ProjektKampaniaDatyVerifier" onadded="false" />
+      <verifier name="Projekt.ProjektZadaniaDatyVerifier" onadded="false" />
+    </col>
+
+    <col name="Prowadzacy" type="Operator" category="Projekt" caption="Odpowiedzialny" description="Osoba odpowiedzialna za prowadzenie projektu" />
+
+    <!-- [12186][8.1][CRM 8.1]: Na formularzu osoby kontaktowej dodać zakąłdkę Projekty (dodanie kolekcji Projekty na KontaktOsoba) -->
+    <col name="Przedstawiciel" type="KontaktOsoba" category="Kontrahent" caption="Przedstawiciel" description="Osoba odpowiedzialna za prowadzenie projektu ze strony kontrahenta" children="Projekty" relname="Projekty przedstawiciela">
+      <verifier name="Projekt.KontrahentPrzedstawicielVerifier" onadded="true"/>
+    </col>
+
+    <col name="WartoscWyliczana" type="boolean" category="Wartość" caption="Wartość wyliczana" description="Zakładane wartości wyliczane na podstawie listy produktów" />
+    <col name="Przychod" type="currency" category="Wartość" caption="Sprzedaż" description="Zakładana wartość sprzedaży." />
+    <col name="Koszt" type="currency" category="Wartość" caption="Koszt" description="Zakładane koszty prowadzenia projektu." />
+
+    <col name="StanIdent" type="int" category="Stan" caption="Stan" description="Stan projektu. Relacja do property Ident w liście stanów powiązanych z definicją projektu."  />
+    <col name="Realizacja" type="percent" category="Stan" caption="Realizacja" description="Procent realizacji projektu" />
+    <col name="Aktywny" type="boolean" category="Stan" readonly="set" caption="Aktywny" description="Wskazuje, czy projekt w tym stanie jest aktywny (otwarty).">
+      <verifier name="Projekt.ProjektKampaniaStanyVerifier" onadded="false" />
+      <verifier name="Projekt.ProjektZadaniaStanyVerifier" onadded="false" />
+    </col>
+    <col name="Zamkniecie" type="text" category="Stan" caption="Powód zamknięcia" description="Opis przyczyny zamknięcia projektu." />
+
+    <!-- 7.2 -->
+    <col name="OddzialFirmy" type="OddzialFirmy" category="Ogólne" caption="Oddział firmy" description="Oddział firmy do którego przypisany jest projekt." />
+
+    <!-- 7.5 -->
+    <col name="RachunekBankowy" type="EwidencjaSP" category="Ogólne" caption="Rachunek bankowy" description="Rachunek bankowy do rozliczania projektu." />
+  </table>
+
+  <enum name="TypZadaniaNadrzednego" />
+  <enum name="PrzypomnienieWg"/>
+  <table name="Zadanie" tablename="Zadania" name8="Zadania" tablecaption="Zadania i zdarzenia CRM" caption="Zadania i zdarzenia CRM"  guided="Root">
+
+    <!--[13945][8.3][CRM 8.3]: Umożliwić uzycie zadania CRM w słowniku podzielnika-->
+    <interface>IElementSlownika</interface>
+    <interface>IEmailElement</interface>
+    <key name="WgNazwy">
+      <keycol name="Nazwa" />
+    </key>
+
+    <key name="WgMailId">
+      <keycol name="MailId" />
+    </key>
+
+    <key name="WgWykonujacyGoogleEventID" keyunique="false">
+      <keycol name="Wykonujacy"/>
+      <keycol name="GoogleEventID"/>
+    </key>
+
+    <col name="Definicja" type="DefZadania" category="Numer"
+            description="Definicja zadania."
+            required="true"
+            relname="Definicja zadania"
+			relright="true"
+            >
+      <keycol name="DataOd" />
+      <keycol name="CzasOd"/>
+    </col>
+
+    <col name="Rodzaj" type="RodzajZadania" required="true" category="Zadanie" readonly="set" caption="Rodzaj zadania" description="Rodzaj zadania. Może być zadanie lub zdarzenie. Dziedziczone z definicji."  />
+
+    <!--<col name="Nadrzedne" type="Zadanie" category="Zadanie" caption="Zadanie nadrzędne" description="Zadanie główne (dla zadań grupowych) lub zadanie poprzedzające." />-->
+    <!--[11135][7.8.2][CRM 7.8.2]: Zoptymalizować dzialanie workera "Przypnij jako powiązane" na zadaniu-->
+    <col name="Nadrzedne" type="Zadanie" category="Zadanie" caption="Zadanie nadrzędne" description="Zadanie główne (dla zadań grupowych) lub zadanie poprzedzające.">
+      <verifier name="Zadanie.NadrzedneVerifier" onadded="true"/>
+    </col>
+
+    <col name="TypNadrzednego" type="TypZadaniaNadrzednego" category="Zadanie" caption="Typ zadania nadrzędnego" description="Rodzaj zadania nadrzędnego: główne (dla zadań grupowych) lub poprzedzające." />
+    <col name="Seria" type="string" length="32" category="Ogólne" caption="Seria" description="Seria aktywności." />
+    <col name="Numer" type="NumerDokumentu" category="Numer"/>
+    <col name="Kontrahent" type="IKontrahent" required="false" keyprimary="true"  category="Kontrahent"
+			description="Kontrahent, którego dotyczy zadanie."
+			children="Zadania"
+			relname="Kontrahent">
+      <keycol name="DataOd" />
+      <keycol name="CzasOd"/>
+      <verifier name="Zadanie.KorespondencjaZdarzenieVerifier" onadded="false"/>
+      <verifier name="Zadanie.KontrahentPrzedstawicielVerifier" onadded="true"/>
+    </col>
+
+
+    <col name="Prowadzacy" type="Operator" category="Zadanie" caption="Zlecający" description="Osoba zlecająca zadanie" >
+      <verifier name="Zadanie.WybranoMail" onadded="false"/>
+      <verifier name="Zadanie.ProwadzacyMaPrawaDoEmailaVerifier" onadded="false"/>
+    </col>
+    <col name="Wykonujacy" type="Operator" category="Zadanie" caption="Operator" description="Osoba wykonująca zadanie" >
+      <verifier name="Zadanie.JestWykonujacyLubRolaVerifier" onadded="false"/>
+      <verifier name="Zadanie.WybranoMail" onadded="false"/>
+      <verifier name="Zadanie.WykonujacyMaPrawaDoEmailaVerifier" onadded="false"/>
+    </col>
+
+    <col name="Przedstawiciel" type="KontaktOsoba" length="40" category="Kontrahent" caption="Przedstawiciel" description="Osoba odpowiedzialna za wykonanie zadania ze strony kontrahenta" children="Zadania" relname="KontaktOsoba">
+      <verifier name="Zadanie.KorespondencjaZdarzenieVerifier" onadded="false"/>
+      <verifier name="Zadanie.KontrahentPrzedstawicielVerifier" onadded="true"/>
+    </col>
+
+    <col name="DataOd" type="date" category="Zadanie" caption="Data rozpoczęcia" description="Data rozpoczęcia zadania">
+      <verifier name="Zadanie.ZadanieOkresVerifier" onadded="false"/>
+      <verifier name="Zadanie.ZadnieProjektDatyVerifier" onadded="false" />
+      <verifier name="Zadanie.ZadnieEtapProjektuDatyVerifier" onadded="false" />
+    </col>
+
+    <col name="CzasOd" type="timesec" category="Zadanie" caption="Godzina rozpoczęcia" description="Godzina rozpoczęcia zadania">
+      <verifier name="Zadanie.ZadanieOkresVerifier" onadded="false"/>
+    </col>
+
+    <col name="DataDo" type="date" category="Zadanie" caption="Data zakończenia" description="Planowana data zakończenia zadania">
+      <verifier name="Zadanie.ZadanieOkresVerifier" onadded="false"/>
+      <verifier name="Zadanie.ZadnieProjektDatyVerifier" onadded="false" />
+      <verifier name="Zadanie.ZadnieEtapProjektuDatyVerifier" onadded="false" />
+    </col>
+
+    <col name="CzasDo" type="timesec" category="Zadanie" caption="Godzina zakończenia" description="Planowana godzina zakończenia zadania">
+      <verifier name="Zadanie.ZadanieOkresVerifier" onadded="false"/>
+    </col>
+
+    <col name="PriorytetIdent" type="int" category="Stan" caption="Priorytet" description="Priorytet zadania. Relacja do property Ident w liście priorytetów powiązanych z definicją zadania." />
+    <col name="StanIdent" type="int" category="Stan" caption="Stan" description="Stan zadania. Relacja do property Ident w liście stanów powiązanych z definicją zadania." />
+    <col name="StanZadania" type="StanZadania" category="Stan" description="Stan projektu." />
+    <col name="PriorytetZadania" type="PriorytetZadania" category="Stan" description="Priorytet projektu." />
+
+    <col name="Aktywny" type="boolean" category="Stan" readonly="set" caption="Aktywny" description="Wskazuje, czy zadanie w tym stanie jest aktywne (otwarte)." >
+      <verifier name="Zadanie.ZadnieProjektStanyVerifier" onadded="false" />
+      <verifier name="Zadanie.ZadnieEtapProjektuStanyVerifier" onadded="false" />
+    </col>
+
+    <col name="Kampania" type="Kampania" required="false" category="Kampania"
+			description="Kampania, z którą powiązane jest zadanie"
+			children="Zadania"
+			relname="Kampania">
+      <keycol name="DataOd" />
+      <keycol name="CzasOd"/>
+    </col>
+
+    <col name="Projekt" type="Projekt" required="false" category="Projekt"
+			description="Projekt, z którym powiązane jest zadanie"
+			children="Zadania"
+			relname="Projekt">
+      <keycol name="DataOd" />
+      <keycol name="CzasOd"/>
+
+      <verifier name="Zadanie.ZadnieProjektDatyVerifier" onadded="false" />
+      <verifier name="Zadanie.ZadnieProjektStanyVerifier" onadded="false" />
+    </col>
+
+    <col name="EtapProjektu" type="EtapProjektu">
+      <verifier name="Zadanie.ZadnieEtapProjektuStanyVerifier" onadded="false" />
+      <verifier name="Zadanie.ZadnieEtapProjektuDatyVerifier" onadded="false" />
+    </col>
+
+    <col name="Nazwa" type="string" length="80" category="Zadanie" required="true" caption="Nazwa" description="Krótka nazwa zadania lub zdarzenia, na podstawie której będzie można go wyszukiwać" >
+      <attribute>Dictionary("CRM.Zdarz.Temat", ManualList=true)</attribute>
+      <!-- CRM.Zdarz.Temat - dla kompatybilności wstecz -->
+    </col>
+
+    <col name="Opis" type="text" category="Zadanie" caption="Opis zadania" description="Dokładny opis zadania lub zdarzenia" />
+    <col name="Uwagi" type="text" category="Zadanie" caption="Uwagi" description="Uwagi dotyczące zadania wpisywane przez operatora wykonującego zadanie." />
+    <col name="Przypomnienie" type="time" category="Zadanie" caption="Przypomnienie" description="Czas przypomnienia o zadaniu" />
+    <col name="PrzypomnienieWg" type="PrzypomnienieWg" />
+    <col name="WartoscWyliczana" type="boolean" category="Wartość" caption="Wartość wyliczana" description="Zakładane wartości wyliczane na podstawie listy produktów" />
+    <col name="Koszt" type="currency" category="Wartość" caption="Koszt" description="Szacowany koszt zadania" />
+    <col name="Przychod" type="currency" category="Wartość" caption="Przychód" description="Szacowany przychód zadania" />
+
+    <!-- dodane głównie dla zleceń serwisowych -->
+    <col name="Kontakt" name12="Knt" type="Kontakt" category="Dane adresowe"/>
+    <col name="DataZamkniecia" type="date" category="ZlecenieSerwisowe" caption="Data zamknięcia" description="Data zamknięcia zadania." >
+      <verifier name="Zadanie.ZadanieOkresVerifier" onadded="false"/>
+    </col>
+    <col name="CzasZamkniecia" type="time" category="ZlecenieSerwisowe" caption="Godzina zamknięcia" description="Godzina zamknięcia zadania." >
+      <verifier name="Zadanie.ZadanieOkresVerifier" onadded="false"/>
+    </col>
+
+    <col name="Korespondencja" type="Korespondencja" required="false" category="Korespondencja"
+			description="Korespondencja, z którą powiązane jest zdarzenie"
+			children="Zdarzenia"
+			relname="Korespondencja">
+      <keycol name="DataOd" />
+      <keycol name="CzasOd"/>
+      <verifier name="Zadanie.KorespondencjaZdarzenieVerifier" onadded="false"/>
+    </col>
+    <!-- 5.3 -->
+    <col name="MailId" type="string" length="255" />
+    <!-- 6.0 -->
+    <!-- <col name="Calodzienne" type="boolean" category="Ogólne" caption="Zadanie całodzienne" description="Określa, czy zadanie jest całodzienne." /> -->
+    <!-- 6.1 -->
+    <col name="Lokalizacja" type="Lokalizacja" category="Urzadzenie" caption="Lokalizacja zadania" description="Lokalizacja zadania."
+      		children="Zadania"
+			    relname="Zadania dla lokalizacji."
+         />
+    <col name="RoleGuid" type="guid" category="Ogólne" description="Rola dla której przypisane jest zadanie.">
+      <verifier name="Zadanie.JestWykonujacyLubRolaVerifier" onadded="false"/>
+    </col>
+
+    <!-- 7.2 -->
+    <col name="OddzialFirmy" type="OddzialFirmy" category="Ogólne" caption="Oddział firmy" description="Oddział firmy do którego przypisana jest aktywność." />
+    <!-- 7.5 -->
+    <col name="CzasWykonania" type="timesec" category="Zadanie" caption="Czas wykonania" description="Czas wykonania." />
+    <col name="GoogleEventID" type="string" length="255" caption="Identyfikator" description = "Identyfikator w kalendarzu Google."  />
+    <col name="ETag" type="string" length="32" caption="Etag" description="Umożliwia weryfikację stanu zadania podczas synchronizacji" />
+    <col name="Synced" type="boolean" caption="Zsynchronizowane" description="Określa czy zadanie zostało poprawnie zsynchronizowane z kalendarzem Google" />
+  </table>
+
+  <table name="HistZadania" tablename="HistZadan" caption="Historia zadań">
+
+    <col name="DataModyfikacji" type="date" />
+    <col name="CzasModyfikacji" type="time" />
+
+    <key name="WgDataModyfikacji" keyunique="false">
+      <keycol name="DataModyfikacji" />
+      <keycol name="CzasModyfikacji" />
+    </key>
+
+    <col name="Modyfikujacy" keyprimary="true" type="Operator" caption="Operator modyfikujący zadanie" />
+
+    <col name="Rodzaj" type="RodzajZadania" required="true" category="Zadanie" caption="Rodzaj zadania" description="Rodzaj zadania. Może być zadanie lub zdarzenie. Dziedziczone z definicji." />
+
+    <col name="Kontrahent" type="IKontrahent" required="false" category="Kontrahent" />
+    <col name="Nazwa" type="string" length="80" category="Zadanie" required="true" caption="Nazwa" description="Krótka nazwa zadania lub zdarzenia, na podstawie której będzie można go wyszukiwać" />
+    <col name="Opis" type="text" category="Zadanie" caption="Opis" description="Dokładny opis zadania lub zdarzenia" />
+    <col name="Uwagi" type="text" category="Zadanie" caption="Uwagi" description="Uwagi dotyczące zadania wpisywane przez operatora wykonującego zadanie." />
+    <col name="DataOd" type="date" category="Zadanie" caption="Data rozpoczęcia" description="Data rozpoczęcia zadania" />
+    <col name="CzasOd" type="time" category="Zadanie" caption="Godzina rozpoczęcia" description="Godzina rozpoczęcia zadania" />
+    <col name="DataDo" type="date" category="Zadanie" caption="Data zakończenia" description="Planowana data zakończenia zadania" />
+    <col name="CzasDo" type="time" category="Zadanie" caption="Godzina zakończenia" description="Planowana godzina zakończenia zadania" />
+    <col name="DataZamkniecia" type="date" category="ZlecenieSerwisowe" caption="Data zamknięcia zadania" description="Data zamknięcia zadania" />
+    <col name="CzasZamkniecia" type="time" category="ZlecenieSerwisowe" caption="Godzina zamknięcia zadania" description="Godzina zamknięcia zadania" />
+    <col name="Kontakt" name12="Knt" type="Kontakt" category="Dane adresowe"/>
+    <col name="Koszt" type="currency" category="Wartość" caption="Koszt" description="Szacowany koszt zadania" />
+    <col name="Przychod" type="currency" category="Wartość" caption="Przychód" description="Szacowany przychód zadania" />
+    <col name="Prowadzacy" type="Operator" category="Zadanie" caption="Zlecający" description="Osoba zlecająca zadanie" />
+    <col name="Wykonujacy" type="Operator" category="Zadanie" caption="Operator" description="Osoba wykonująca zadanie" />
+    <col name="Przedstawiciel" type="KontaktOsoba" length="40" category="Kontrahent" caption="Przedstawiciel" description="Osoba odpowiedzialna za wykonanie zadania ze strony kontrahenta" />
+
+    <col name="StanZadania" type="StanZadania" category="Stan" description="Stan projektu." />
+    <col name="PriorytetZadania" type="PriorytetZadania" category="Stan" description="Priorytet projektu." />
+    <col name="EtapProjektu" type="EtapProjektu" />
+
+    <col name="Kampania" type="Kampania" required="false" category="Kampania" description="Kampania, z którą powiązane jest zadanie" />
+    <col name="Projekt" type="Projekt" required="false" category="Projekt" description="Projekt, z którym powiązane jest zadanie" />
+    <col name="Urzadzenie" type="Urzadzenie" category="" caption="Urządzenie, którego dotyczy przegląd" description="Urządzenie, którego dotyczy przegląd" />
+
+    <col name="Zadanie" type="Zadanie"
+			 required="true"
+			 relname="HistoriaZadania"
+			 relguided="inner"
+			 delete="cascade"
+			 children="HistoriaZadania"
+			 />
+    <col name="RoleGuid" type="guid" category="Ogólne" description="Rola dla której przypisane jest zadanie." />
+  </table>
+
+
+
+  <!-- DOKUMENTY POWIĄZANE 	-->
+
+
+  <interface name="IDokumentCRM"/>
+  <enum name="SumowanieWartosciCRM" />
+  <enum name="KopiowanieDokCRM" />
+  <enum name="RodzajDokCRM"/>
+
+  <table name="DokumentCRM" tablename="DokumentyCRM" caption="Dokument powiązany" tablecaption="Dokumenty powiązane">
+
+
+    <col name="Dokument" type="IDokumentCRM"
+			 required="true"
+			 relname="ZadaniaPowiazane"
+			 delete="cascade"
+			 children="ZadaniaCRM"
+			 >
+      <verifier name="DokumentCRM.DokumentWykorzystanyVerifier" onadded="true" />
+      <!--[11551][7.9][CRM 7.9]: Zmiana workerów  na zleceniu : Utworz dokument dla części i dla uslug-->
+      <verifier name="DokumentCRM.ZadanieVerifier" onadded="true" />
+    </col>
+
+    <col name="Zadanie" type="Zadanie"
+			 required="true"
+			 relname="DokPowiazane"
+			 relguided="inner"
+			 delete="cascade"
+			 children="DokumentyCRM"
+         keyprimary="true">
+      <!--[11551][7.9][CRM 7.9]: Zmiana workerów  na zleceniu : Utworz dokument dla części i dla uslug-->
+      <verifier name="DokumentCRM.ZadanieVerifier" onadded="true" />
+    </col>
+
+    <col name="RodzajDokCRM" type="RodzajDokCRM" />
+    <col name="SumowanieWartosci" type="SumowanieWartosciCRM" />
+    <col name="KopiowanieDokCRM" type="KopiowanieDokCRM" />
+  </table>
+
+
+
+  <!-- ZASOBY CRM 	-->
+
+
+
+  <interface name="IZasobCRM"/>
+  <table name="ZasobCRM" tablename="ZasobyCRM" caption="Zasoby powiązane z zadaniem" tablecaption="Zasoby powiązane z zadaniem">
+
+    <col name="Zasob" type="IZasobCRM" required="true"
+			 relname="ZasobyCRM"
+			 relguided="inner"
+			 children="ZasobyCRM"
+     >
+      <verifier name="ZasobCRM.ZasobDostepnyVerifier" onadded="true"/>
+    </col>
+
+    <col name="Zadanie"
+		   type="Zadanie"
+		   category="Ogólne"
+		   description="Zadanie, do którego jest przypisany zasób"
+		   children="ZasobyCRM"
+		   relname="Zasoby powiazane z zadaniem"
+		   relguided="inner"
+		   keyprimary="true">
+      <verifier name="ZasobCRM.ZadanieVerifier" onadded="true"/>
+    </col>
+
+    <col name="Rezerwowany" type="boolean" category="Ogólne" caption="Rezerwowany" description="Wskazuje, czy zasób ma być rezerwowany." />
+
+    <col name="DataOd" type="date" category="Ogólne" caption="Data rozpoczęcia rezerwacji" description="Data rozpoczęcia rezerwacji.">
+      <verifier name="ZasobCRM.ZasobDostepnyVerifier" onadded="true"/>
+      <verifier name="ZasobCRM.ZasobOkresVerifier" onadded="true"/>
+      <verifier name="ZasobCRM.ZasobKontrolaCzasuVerifier" onadded="true"/>
+      <verifier name="ZasobCRM.ZasobDatyICzasVerifier" onadded="true"/>
+    </col>
+    <col name="CzasOd" type="time" category="Ogólne" caption="Godzina rozpoczęcia rezerwacji" description="Godzina rozpoczęcia rezerwacji.">
+      <verifier name="ZasobCRM.ZasobDostepnyVerifier" onadded="true"/>
+      <verifier name="ZasobCRM.ZasobOkresVerifier" onadded="true"/>
+      <verifier name="ZasobCRM.ZasobKontrolaCzasuVerifier" onadded="true"/>
+      <verifier name="ZasobCRM.ZasobDatyICzasVerifier" onadded="true"/>
+    </col>
+    <col name="DataDo" type="date" category="Ogólne" caption="Data zakończenia rezerwacji" description="Data zakończenia rezerwacji.">
+      <verifier name="ZasobCRM.ZasobDostepnyVerifier" onadded="true"/>
+      <verifier name="ZasobCRM.ZasobOkresVerifier" onadded="true"/>
+      <verifier name="ZasobCRM.ZasobKontrolaCzasuVerifier" onadded="true"/>
+      <verifier name="ZasobCRM.ZasobDatyICzasVerifier" onadded="true"/>
+    </col>
+    <col name="CzasDo" type="time" category="Ogólne" caption="Godzina zakończenia rezerwacji" description="Godzina zakończenia rezerwacji.">
+      <verifier name="ZasobCRM.ZasobDostepnyVerifier" onadded="true"/>
+      <verifier name="ZasobCRM.ZasobOkresVerifier" onadded="true"/>
+      <verifier name="ZasobCRM.ZasobKontrolaCzasuVerifier" onadded="true"/>
+      <verifier name="ZasobCRM.ZasobDatyICzasVerifier" onadded="true"/>
+    </col>
+
+    <!-- [10800][7.9][CRM 7.9]: Zasoby na projekcie -->
+    <col name="Projekt"
+		   type="Projekt"
+		   category="Ogólne"
+		   description="Projekt, do którego jest przypisany zasób"
+		   delete="cascade"
+		   children="ZasobyCRM"
+		   relname="Zasoby powiązane z projektem"
+		   relguided="inner">
+      <verifier name="ZasobCRM.ProjektVerifier" onadded="true"/>
+    </col>
+
+  </table>
+
+
+
+
+  <!-- URZĄDZENIA -->
+
+
+
+
+  <enum name="TypZaokraglenia"/>
+  <table name="Urzadzenie" tablename="Urzadzenia" name8="Urzadz" tablecaption="Urządzenia" caption="Urządzenia"
+		   guided="Root">
+
+    <interface>IKodowany</interface>
+    <interface>IZasobCRM</interface>
+
+    <key name="WgIdent" keyunique="true" keyprimary="true">
+      <keycol name="Identyfikator" />
+    </key>
+
+    <key name="WgNazwy" keyunique="false">
+      <keycol name="Nazwa" />
+    </key>
+
+
+    <col name="Identyfikator" type="string" length="80" category="Urzadzenie" required="true" caption="Identyfikator" description="Unikalny identyfikator urządzenia" />
+
+    <col name="Nazwa" type="string" length="200" category="Urzadzenie" required="true" caption="Nazwa" description="Nazwa urządzenia" >
+      <attribute>Dictionary("Zad.Urzadz.Nazwa", ManualList=true)</attribute>
+    </col>
+
+    <col name="Opis" type="text" category="Urzadzenie" caption="Opis" description="Dokładny opis urządzenia" />
+    <col name="Kontrahent" type="IKontrahent" required="false" category="Urzadzenie" description="Kontrahent, do którego przypisane jest urządzenie."
+			 children="Urzadzenia" relname="Kontrahent" />
+
+    <!--
+		<col name="Adres" type="Adres" category="Urzadzenie" description="Lokalizacja urządzenia" />
+		-->
+
+    <col name="DataSprzedazy" type="date" category="Urzadzenie" caption="Data sprzedaży" description="Data sprzedaży urządzenia" />
+    <col name="DataGwarancji" type="date" category="Urzadzenie" caption="Data gwarancji" description="Data do jakiej obowiązuje gwarancja" />
+    <col name="Serwisant" type="Operator" category="Urzadzenie" caption="Serwisant" description="Serwisant odpowiedzialny za urządzenie" />
+    <col name="Aktywne" type="boolean" category="Urzadzenie" caption="Aktywne" description="Wpozwala na określenie, czy urządzenie jest aktywne" />
+    <col name="Towar" type="Towar" category="Handel" relname="Towary" description="Lista towarów." />
+    <col name="DokumentHandlowy" type="DokumentHandlowy" category="Handel" relname="DokumentHandlowy" description="Lista towarów." />
+    <col name="PozycjaDokHandlowego" type="PozycjaDokHandlowego"  category="Handel" description="Pozycja dokumentu handlowego" />
+    <col name="PrzegladOkres" type="int" category ="Urzadzenie" description="Co ile miesięcy przegląd" />
+
+    <!-- 5.3 -->
+
+    <col name="Wlasne" type="boolean" category="Urzadzenie" caption="Urządzenie własne" description="Oznacza urządzenie własne." />
+
+    <col name="Serwisowane" type="boolean" category="Urzadzenie" caption="Urządzenie przyjmowane do serwisu" description="Oznacza możliwość przyjmowania urządzenia do serwisu.">
+      <!--[11715][8.0][CRM 8.0]: Zasoby - Paczka zmian (pkt. 2)-->
+      <!--<verifier name="Urzadzenie.UrzadzenieSerwisowaneWypozyczaneVerifier" onadded="false"/>-->
+    </col>
+
+    <col name="Wypozyczane" type="boolean" category="Urzadzenie" caption="Możliwość wypożyczenia urządzenia." description="Oznacza możliwość wypożyczania urządzenia." >
+      <!--[11715][8.0][CRM 8.0]: Zasoby - Paczka zmian (pkt. 2)-->
+      <!--<verifier name="Urzadzenie.UrzadzenieSerwisowaneWypozyczaneVerifier" onadded="false"/>-->
+    </col>
+    <col name="Inwentarz" type="IInwentarz" category="Urzadzenie" caption="Środek trwały, wyposażenie" description="Środek trwały, wyposażenie" />
+
+    <!-- 6.1 -->
+
+    <col name="TypUrzadzenia" type="TypUrzadzenia" category="Urzadzenie" setonlynull="true" caption="Typ urządzenia" description="Typ urządzenia."/>
+    <col name="Lokalizacja" type="Lokalizacja" category="Urzadzenie" caption="Lokalizacja urządzenia" description="Lokalizacja urządzenia."
+              		children="Urzadzenia"
+        			    relname="Urządzenia dla lokalizacji."
+    />
+
+    <col name="ModelUrz" type="ModelUrz" category="Urzadzenie" caption="Model urządzenia" description="Model urządzenia." />
+    <!-- 7.2 -->
+    <col name="OddzialFirmy" type="OddzialFirmy" category="Ogólne" caption="Oddział firmy" description="Oddział firmy do którego przypisane jest urządzenie." />
+    <col name="TowarUsluga" type="Towar" category="Handel" description="Towar typu usługa, do rozliczenia użycia." />
+    <col name="Stawka" type="currency" category="Handel" description="Stawka za jednostkę czasu wypożyczenia." />
+    <col name="TypZaokraglenia" type="TypZaokraglenia" category="Handel" description="Określa rodzaj zaokrąglenia." />
+  </table>
+
+  <table name="PlanowanyPrzeglad" tablename="PlanPrzeglady" name8="PlnPrzeg" tablecaption="Planowany przegląd urządzenia" caption="Planowany przegląd urządzenia">
+    <key name="WgDaty" keyunique="true" keyprimary="true">
+      <keycol name="Termin" />
+      <keycol name="Urzadzenie" />
+      <keycol name="Nazwa" />
+    </key>
+    <col name="Urzadzenie" type="Urzadzenie" category="Przeglad" caption="Urządzenie, którego dotyczy przegląd" description="Urządzenie, którego dotyczy przegląd"
+			 children="PlanowanePrzeglady" relname="PrzegladyUrzadzenia" delete="cascade" required="true" />
+    <col name="Termin" type="date" category="Przeglad" caption="Data przeglądu" description="Planowana data przeglądu" />
+    <col name="Nazwa" type="string" length="80" category="Przeglad" required="true" caption="Nazwa" description="Nazwa przeglądu." >
+      <attribute>Dictionary("Zad.PP.Nazwa", ManualList=true)</attribute>
+    </col>
+    <col name="Opis" type="text" category="Przeglad" caption="Opis" description="Dokładny opis przeglądu" />
+
+    <col name="Zadanie" type="Zadanie" category="Przeglad" caption="Zadanie" description="Zadanie które jest efektem realizacji tego przeglądu"
+			 children="PlanowanePrzeglady"
+			 relname="PrzegladyZadania"
+			 delete="cascade"
+			 />
+    <col name="Anulowany" type="boolean" category="Przeglad" caption="Anulowany" description="Czy przegląd został anulowany" />
+    <col name="AnulowaniePowod" type="text" category="Przeglad" caption="Powód anulowania" description="Powód anulowania przeglądu"/>
+  </table>
+
+
+  <!-- DB 50300 -->
+
+
+  <!-- DEFINICJA KORESPONDENCJI -->
+
+
+
+
+  <enum name="SposobWysylkiMail" />
+  <enum name="WysylkaZalacznikow" />
+  <enum name="WysylkaNaAdres" />
+  
+  <table name="DefKoresp" tablename="DefsKoresp" name8="DefKores" guided="Root" config="true"  tablecaption="Definicje korespondencji" caption="Definicje korespondencji">
+    <interface>IRightsSource</interface>
+    <key name="WgSymbolu" keyunique="true" keyprimary="true">
+      <keycol name="Symbol" />
+    </key>
+
+    <key name="WgNazwy" keyunique="true">
+      <keycol name="Nazwa" />
+    </key>
+
+    <col name="Symbol" type="string" length="12" required="true" category="Ogólne" important="true" caption="Symbol" description="Skrótowa nazwa definicji korespondencji wykorzystywana do wyszukiwania definicji." />
+    <col name="Nazwa" type="string" length="30" required="true" category="Ogólne" important="true" caption="Nazwa" description="Pełna nazwa definicji korespondencji." />
+    <col name="Blokada" type="boolean" category="Ogólne" caption="Zablokowana" description="Określa zablokowanie definicji. Zablokowane definicje korespondencji nie będą wyświetlane w liście wyboru." />
+    <col name="Domyslna" type="boolean" category="Ogólne" caption="Domyślna" description="Określa, że jest to domyślna definicja korespondencji." />
+    <col name="Numeracja" type="DefinicjaNumeracji" category="Definicja" caption="Numeracja" description="Ustawienia określające sposób numeracji korespondencji." />
+    <col name="DefZdarzenia" type="DefZadania" caption="Definicja zdarzenia" description="Definicja zdarzenia, które będzie generowane jako korespondencja." />
+    <col name="SposobWysylki" type="SposobWysylkiMail" caption="Sposób wysyłki maila" description="Określa w jaki sposób wysyłki maila." />
+    <col name="Zalaczniki" type="WysylkaZalacznikow" caption="Wysyłka z załącznikami" description="Określa czy wysyłka będzie z załącznikami." />
+    <col name="StanZdarzPoWysylce" type="StanZadania" caption="Definicja zdarzenia po wysyłce" description="Definicja zdarzenia po wysyłce korespondecji." />
+    <col name="KontrolaAdresowEmail" type="TypKontroli" category="Ogólne" caption="Typ kontroli adresów e-mail" description="Określa typ kontroli adresów e-mail." />
+    <!-- [11158][7.9][CRM 7.9]: Dodanie konfiguracji czasu opóźnienia wysyłki maili indywidualnych -->
+    <col name="OpoznienieWysylki" type="int" category="Ogólne" caption="Opóźnienie wysyłki" description="Określa czas (w sekundach) przerw pomiędzy wysyłaniem maili indywidualnych.">
+      <verifier name="DefKoresp.OpoznienieWysylkiVerifier" onadded="true"/>
+    </col>  
+  </table>
+
+
+  <!-- STANY KORESPONDENCJI -->
+
+
+  <table name="StanKoresp" tablename="StanyKoresp" name8="StanKore" config="true" tablecaption="Stany korespondencji" caption="Stany korespondencji.">
+
+    <col name="Definicja" type="DefKoresp" required="true" category="Definicja"
+			description="Definicja korespondencji, do której jest przypisany ten stan"
+			children="Stany"
+			relname="Definicja korespondencji"
+			delete="cascade"
+			relguided="inner"
+			relright="false"
+			keyprimary="true"
+			keyclass="Lp" keyclasscol="Lp"
+			readonly="true"
+            />
+
+    <col name="Lp" type="int" required="true" batchfield="false" category="Ogólne" caption="Lp" description="Liczba porządkowa stanu realizacji w ramach projektu." />
+    <col name="Ident" type="int" category="Ogólne" required="true" readonly="set" caption="Identyfikator" description="Identyfikator stanu na definicji korespondencji. Wykorzystywany w relacji do korespondencji." />
+    <col name="Blokada" type="boolean" category="Ogólne" caption="Zablokowany"  description="Określa zablokowanie stanu. Zablokowane stany korespondencji nie będą wyświetlane w liście wyboru." />
+    <col name="Nazwa" type="string" length="30" required="true" category="Ogólne" caption="Nazwa" description="Nazwa stanu korespondencji" />
+    <col name="Aktywny" type="boolean" category="Ogólne" caption="Aktywny" description="Wskazuje, czy korespondencja w tym stanie jest aktywna (otwarta)." />
+  </table>
+
+
+
+
+  <!-- KORESPONDENCJA  -->
+
+
+
+
+  <table name="Korespondencja" tablename="Korespondencje" name8="Koresp" tablecaption="Tabela korespondencji" caption="Korespondencja"  guided="Root">
+
+    <key name="WgNazwy">
+      <keycol name="Nazwa" />
+    </key>
+
+    <col name="Definicja"
+			 type="DefKoresp"
+			 category="Numer"
+			 description="Definicja korespondencji."
+			 required="true"
+			 relname="Definicja Korespondencji"
+			 relright="true">
+
+      <keycol name="Data" />
+
+    </col>
+    <col name="StanKoresp" type="StanKoresp" category="Stan" description="Stan korespondencji." />
+    <col name="Numer" type="NumerDokumentu" category="Numer"/>
+    <col name="Nazwa" type="string" length="80" category="Opis" required="true" caption="Nazwa korespondencji" description="Krótka nazwa korespondencji, na podstawie której będzie można ją wyszukiwać." >
+      <attribute>Dictionary("Zad.Koresp.Nazwa", ManualList=true)</attribute>
+    </col>
+    <col name="Tresc" type="text" category="Ogólne" caption="Tresc" description="Tresc korespondencji.">
+      <attribute>ControlEdit(ControlEditKind.ASPX)</attribute>
+    </col>
+    <col name="Uwagi" type="text" category="Ogólne" caption="Uwagi" description="Uwagi korespondencji." />
+    <col name="Data" type="date" category="Ogólne" caption="Data korespondencji" description="Data korespondencji." />
+    <col name="Prowadzacy" type="Operator" category="Ogólne" keyprimary="true" caption="Prowadzacy" description="Osoba odpowiedzialna za korespondencje." />
+    <col name="StanIdent" type="int" category="Ogólne" caption="Stan" description="Stan korespondencji. Relacja do property Ident w liście stanów powiązanych z definicją korespondencji."  />
+    <col name="Aktywny" type="boolean" category="Ogólne" readonly="set" caption="Aktywny" description="Wskazuje, czy korespondencja w tym stanie jest aktywna (otwarta)." />
+    <!-- 7.2 -->
+    <col name="OddzialFirmy" type="OddzialFirmy" category="Ogólne" caption="Oddział firmy" description="Oddział firmy do którego przypisana jest korespondencja." />
+  </table>
+
+
+
+
+  <!-- DB 60100 TYP URZADZENIA-->
+
+
+
+  <enum name="RodzajFormularzaUrzadzenia"/>
+
+  <table name="TypUrzadzenia" tablename="TypyUrzadzen" name8="TypUrz" config="true" guided="Root" tablecaption="Typy urządzeń." caption="Typ urządzenia">
+    <interface>IRightsSource</interface>
+    <key name="wgSymbol" keyprimary="true" keyunique="true">
+      <keycol name="Symbol" />
+    </key>
+
+    <col name="Symbol" keyunique="true" type="string" length="12" required="true" category="Ogólne" important="true" caption="Symbol" description="Symbol rodzaju urządzenia." />
+    <col name="Nazwa" type="string" length="30" required="true" category="Ogólne" caption="Nazwa" description="Nazwa rodzaju urządzenia." />
+    <col name="FiltrTowaru" type="string" length="200" category="Ogólne" caption="Filtr towaru" description="Filtr wg jakiego wyświetlana jest lista towarów na urządzeniu." />
+    <col name="Gwarancja" type="int" category ="Ogólne" description="Gwarancja urządzenia." />
+    <col name="PrzegladOkres" type="int" category ="Ogólne" description="Co ile miesięcy przegląd." />
+    <col name="DefZlecenia" type="DefZadania" category="Ogólne" caption="Domyślna definicja zlecenia" description="Definicja domyślnego zlecenia dla urządzeń danego rodzaju." />
+    <col name="Formularz" type="RodzajFormularzaUrzadzenia" category="Ogólne" caption="Rodzaj formularza" description="Określa sposób wyświetlania formularza" />
+    <col name="NazwaZakladkiUz" type="string" length="50" category="Ogólne" caption="Nazwa zakładki użytkownika" />
+    <col name="DefPageXml" type="text" category="Ogólne"  caption="Definicja zakładki użytkownika."/>
+
+    <!-- 60200 -->
+    <col name="Domyslny" type="boolean" category="Ogólne" caption="Domyślna" description="Określa, że jest to domyślny typ urządzenia." />
+    <!-- 70100 -->
+    <col name="PrefixIdent" type="string" length="16" category="Ogólne" caption="Prefix identyfilatora" description="Prefix identyfikatora urządzenia." />
+    <col name="LenIdent" type="int" category ="Ogólne" description="Długość kodu identyfikatora." />
+  </table>
+
+
+
+  <!-- DB 70000 BUDZET -->
+
+
+
+  <enum name="StanBudzetu" />
+  <enum name="SposobRozliczania" />
+  <enum name="TypOkresu" />
+
+  <interface name="IBudzetowany" />
+  <table name="BudzetProjektu" tablename="BudzetyProjektu" name8="BudzPr" guided="Root" tablecaption="Budzety projektu" caption="Budzety projektu">
+
+    <key name="wgSymbol" keyprimary="true" keyunique="true">
+      <keycol name="Symbol" />
+    </key>
+
+    <col name="Projekt" type="IBudzetowany" required="true" setonlynull="true" category="Ogólne"
+         children="Budzety"
+         relname="Projekt"
+         delete="cascade"
+         >
+
+    </col>
+    <col name="Symbol" keyunique="true" type="string" length="30" required="true" category="Ogólne" important="true" caption="Symbol" description="Symbol budzetu projektu." />
+    <col name="Nazwa" type="string" length="80" required="true" category="Ogólne" caption="Nazwa" description="Nazwa budzetu projektu." />
+
+    <!-- setonlynull="true"  -->
+
+    <col name="Waluta" type="string" length="3" category="Ogólne" caption="Nazwa" description="Nazwa budzetu projektu." />
+
+    <col name="Podstawowy" type="boolean" category="Budżet" caption="Budżet podstawowy" description="Określa czy budżet jest podstawowy w ramach projektu." />
+    <col name="Stan" type="StanBudzetu" category="Budżet" caption="Stan budżetu" description="Określa stan budżetu." />
+    <col name="DataZamkniecia" type="date" category="Budżet" caption="Data zamknięcia budżetu" description="Określa datę zamknięcia budżetu." />
+    <col name="DlaEtapow" type="SposobRozliczania" category="Budżet" caption="" description="" />
+
+    <col name="Wymiar" type="string" length="120" category="Budżet" caption="Symbol konta" description="Domyślny wymiar dla opisu analitycznego." >
+      <attribute>Dictionary("Wymiar opisu", ManualList=true)</attribute>
+    </col>
+
+    <col name="Aktywny" type="boolean" category="Stan" caption="Aktywny" description="Wskazuje, czy budżet jest aktywny (otwarty)." />
+    <col name="TypOkresu" type="TypOkresu" category="Budżet" caption="Typ okresu budżetu." description="" />
+  </table>
+
+
+
+  <!-- POZYCJE BUDZETU -->
+
+
+
+  <enum name="RodzajPozycjiBudzetu"/>
+  <table name="PozycjaBudzProj" tablename="PozycjeBudzProj" name8="PozBudPr" guided="Root" tablecaption="Pozycje budzetu projektu" caption="Pozycje budzetu projektu">
+
+    <key name="WgNazwa">
+      <keycol name="Nazwa" />
+    </key>
+
+    <key name="wgSymbol" keyprimary="true" keyunique="true" >
+      <keycol name="Symbol" />
+      <keycol name="BudzetProjektu" />
+      <keycol name="Nadrzedna" />
+    </key>
+
+    <col name="Nazwa" type="string" length="160" required="true" category="Ogólne" caption="Nazwa" description="Nazwa pozycji." />
+    <col name="Symbol" type="string" length="64" required="true" category="Ogólne" caption="Symbol" description="Symbol pozycji." >
+      <verifier name="PozycjaBudzProj.PozycjaUniqueVerifier" onadded="true" />
+    </col>
+
+    <col name="BudzetProjektu" type="BudzetProjektu" required="true" setonlynull="true" category="Projekt"
+      description="Budzet projektu, z którym powiązana jest pozycja"
+      children="PozycjeBudzProj"
+      relname="BudzetProjektu"
+      delete="cascade"
+         >
+      <keycol name="Nadrzedna" />
+    </col>
+
+    <col name="RodzajPozycjiBudzetu" type="RodzajPozycjiBudzetu" category="Ogólne" caption="Rodzaj pozycji budzetu" description="Określa rodzaj pozycji budzetu." />
+
+    <col name="Nadrzedna" type="PozycjaBudzProj" category="Ogólne" caption="Pozycja nadrzędna" description="Określa nadrzędną pozycję budżetu projektu."
+         lock="ExclusiveGet"
+         children="Podrzedne"
+         relname="PozycjaBudzProj"
+         delete="cascade"
+         >
+    </col>
+
+    <col name="SymbolKonta" type="string" length="120" category="Ogólne" caption="Symbol konta" description="Domyślny symbol konta dla opisu analitycznego." >
+      <attribute>Dictionary("Symbol opisu", ManualList=true)</attribute>
+    </col>
+    <col name="RozliczanieIlosci" type="boolean" category="Ogólne" caption="Rozliczanie ilości" description="Określa, czy na pozycji należy rozliczać ilości" />
+    <col name="Planowana" type="boolean" category="Ogólne" />
+    <col name="Opis" type="text" category="Ogólne" caption="Opis" description="Opis pozycji." />
+  </table>
+
+
+
+  <!-- KWOTY BUDZETU -->
+
+
+  <interface name="IEtapBudzetu" />
+  <enum name="RodzajKwotyBudzProj" />
+  <table name="KwotaBudzProj" tablename="KwotyBudzProj" name8="KwtBudPr" guided="Root" tablecaption="Kwoty budzetu projektu" caption="Kwoty budzetu projektu">
+
+    <col name="RodzajKwotyBudzProj" type="RodzajKwotyBudzProj" />
+    <col name="PozycjaBudzProj" type="PozycjaBudzProj" required="true" setonlynull="true" category="Ogólne" keyprimary="true"
+      delete="cascade"
+      description="Pozycja budżetu projektu, z którą powiązane jest kwota"
+      children="KwotyBudzProj"
+      relname="PozycjaBudzProj">
+    </col>
+
+    <col name="EtapBudzetu" type="IEtapBudzetu" />
+    <col name="Data" type="date" category="Ogólne" caption="Data" description="Data wprowadzenia kwoty." />
+    <col name="Korekta" type="boolean" category="Ogólne" caption="Korekta" />
+    <col name="Operator" type="Operator" category="Ogólne" caption="Operator" />
+    <col name="Uwagi" type="string" length="80" category="Ogólne" caption="Uwagi" />
+    <col name="Kwota" type="currency" category="Ogólne" caption="Kwota" >
+      <verifier name="KwotaBudzProj.PrzekroczenieKwotVerifier" onadded="false"/>
+    </col>
+    <col name="Ilosc" type="Amount" category="Ogólne" caption="Ilość" >
+      <verifier name="KwotaBudzProj.PrzekroczenieIlosciVerifier" onadded="false"/>
+    </col>
+
+    <col name="BudzetProjektu" type="BudzetProjektu" category="Projekt"
+      description="Budzet projektu, z którym powiązana jest kwota"
+      children="KwotyBudzetu"
+      relname="BudzetProjektu"
+         >
+      <keycol name="PozycjaBudzProj"/>
+    </col>
+
+    <col name="PoczatekOkresu" type="date" category="Ogólne" caption="Data" description="Początek okresu." />
+  </table>
+
+
+
+
+  <!-- 7.1 MODELE URZĄDZEŃ -->
+
+
+
+  <table name="ModelUrz" tablename="ModeleUrz" guided="Root" name8="ModelUrz" tablecaption="Model urządzeń" caption="Modele urządzeń.">
+
+    <key name="WgSymbol" keyprimary="true" keyunique="true">
+      <keycol name="Symbol" />
+      <keycol name="TypUrzadzenia" />
+    </key>
+
+
+    <col name="TypUrzadzenia" type="TypUrzadzenia" category="Ogólne" caption="Typ urządzenia"
+          description="Typ urządzenia."
+          children="Modele"
+          relname="Typ urządzenia"
+          delete="cascade"
+          setonlynull="true"
+          required="true"
+         />
+
+    <col name="Symbol" keyunique="true" type="string" length="20" required="true" category="Ogólne" important="true" caption="Symbol" description="Symbol modelu urządzenia." />
+    <col name="Nazwa" type="string" length="200" required="true" category="Ogólne" caption="Nazwa" description="Nazwa modelu urządzenia." />
+    <col name="Opis" type="text" category="Ogólne" caption="Opis" description="Opis modelu." />
+    <col name="PrzegladOkres" type="int" category ="Ogólne" description="Co ile miesięcy przegląd." />
+    <col name="Aktywny" type="boolean" category="Ogólne" caption="Aktywny" description="Określa, że jest to aktywny model urządzenia." />
+    <col name="Towar" type="Towar" category="Ogólne" relname="Towary" description="Lista towarów." />
+    <col name="OddzialFirmy" type="OddzialFirmy" category="Ogólne" caption="Oddział firmy" description="Oddział firmy do którego przypisany jest model." />
+  </table>
+
+
+
+  <!-- 7.2 URZĄDZENIA UŻYTE -->
+
+
+
+  <table name="UrzadzenieUzyte" tablename="UrzadzeniaUzyte" name8="UrzUz" tablecaption="Urządzenia wykorzystane" caption="Urządzenia użyte">
+
+    <!--[11275][7.9][CRM 7.9]: Zasoby w CRM - Etap II - Wypożyczalnia-->
+    <!--<key name="WgUrzadzenieAktywnosc" keyunique="true">
+      <keycol name="Urzadzenie" />
+      <keycol name="Zadanie" />
+    </key>-->
+
+    <key name="WgAktywnoscZasobPozycja" keyprimary="true">
+      <keycol name="Zadanie" />
+      <keycol name="ZasobCRM" />
+      <keycol name="Pozycja" />
+    </key>
+
+    <col name="Zadanie" type="Zadanie" category="Ogólne" setonlynull="true" required="true" relname="Urządzenia" children="UrzadzeniaUzyte" />
+    <col name="StanZadania" type="StanZadania" required="true" category="Ogólne" description="Stan projektu." />
+
+    <!--[11275][7.9][CRM 7.9]: Zasoby w CRM - Etap II - Wypożyczalnia-->
+    <!--<col name="Urzadzenie" type="Urzadzenie" category="Ogólne" required="true" relname="Zadania"  children="UrzadzeniaUzyte" keyprimary="true">-->
+    <col name="Urzadzenie" type="Urzadzenie" category="Ogólne" required="true" relname="Zadania"  children="UrzadzeniaUzyte">
+      <verifier name="UrzadzenieUzyte.UrzadzenieDostepneVerifier" onadded="true"/>
+    </col>
+
+    <col name="DataZamkniecia" type="date" category="Ogólne" caption="Data zamknięcia" description="Data zamknięcia.">
+      <verifier name="UrzadzenieUzyte.UrzadzenieDostepneVerifier" onadded="true"/>
+    </col>
+
+    <col name="CzasZamkniecia" type="time" category="Ogólne" caption="Godzina zamknięcia" description="Godzina zamknięcia.">
+      <verifier name="UrzadzenieUzyte.UrzadzenieDostepneVerifier" onadded="true"/>
+    </col>
+
+    <col name="Dokument" type="DokumentHandlowy" category="Ogólne" description="Dokument rozliczający."  children="UrzadzeniaUzyte"  relname="UrzadzeniaUzyte" />
+    <col name="Pozycja" type="PozycjaDokHandlowego" category="Ogólne" description="Pozycja rozliczająca."	/>
+
+    <!--[11275][7.9][CRM 7.9]: Zasoby w CRM - Etap II - Wypożyczalnia-->
+    <col name="ZasobCRM" type="ZasobCRM" category="Ogólne" description="Zasoby CRM powiązane z urządzeniami." caption="Zasób CRM" relname="Urządzenia użyte" children="UrzadzeniaUzyte">
+      <verifier name="UrzadzenieUzyte.ZasobCRMVerifier" onadded="true"/>
+    </col>
+  </table>
+
+
+  <!--[11827][8.0][CRM 8.0]: Problem z eksportem/importem definicji zadania CRM-->
+  <table name="KategoriaAkt" tablename="KategorieAkt" name8="KatAkt" tablecaption="Kategoria aktywności" caption="Kategoria aktywności" guided="Root" config="true" >
+
+    <key name="WgNazwa" keyprimary="true" keyunique="true">
+      <keycol name="Nazwa"/>
+    </key>
+
+    <col name="Nazwa" type="string" length="32" required="true" category="Ogólne" important="true" caption="Nazwa kategorii"
+         description="Nazwa kategorii." />
+  </table>
+
+  <!-- [11045][7.9][CRM 7.9]: Aktywności wielopodmiotowe -->
+
+  <table name="PodmiotZadanie" tablename="PodmiotyZadania" caption="Podmioty powiązane z zadaniami" tablecaption="Podmioty powiązane z zadaniami.">
+
+    <key name="WgZadanieKontrahentOsoba" keyunique="true">
+      <keycol name="Zadanie" />
+      <keycol name="Kontrahent" />
+      <keycol name="Osoba" />
+    </key>
+
+    <col name="Zadanie"
+			 type="Zadanie"
+			 category="Zadanie"
+			 required="true"
+			 relname="Zadania podmiotów"
+			 description="Zadania podmiotów (Kontrahentów lub osób)"
+			 relguided="inner"
+			 delete="cascade"
+			 children="ZadaniaPodmiotu"
+			 keyprimary="true">
+      <verifier name="PodmiotZadanie.UnikalnoscDanychVerifier" onadded="true"/>
+      <verifier name="PodmiotZadanie.KontrahentOsobaVerifier" onadded="true"/>
+    </col>
+
+    <col name="Kontrahent"
+			 type="IKontrahent"
+			 category="Podmiot"
+			 caption="Kontrahent"
+			 description="Kontrahent, któremu przyporządkowane jest zadanie."
+			 children="ZadaniaKontrahenta"
+			 relname="Zadania Kontrahenta">
+      <verifier name="PodmiotZadanie.UnikalnoscDanychVerifier" onadded="true"/>
+      <verifier name="PodmiotZadanie.KontrahentOsobaVerifier" onadded="true"/>
+    </col>
+
+    <col name="Osoba"
+			 type="KontaktOsoba"
+			 category="Podmiot"
+			 caption="Osoba"
+			 description="Osoba, której przyporządkowane jest zadanie."
+			 children="ZadaniaOsoby"
+			 relname="Zadania osoby">
+      <verifier name="PodmiotZadanie.UnikalnoscDanychVerifier" onadded="true"/>
+      <verifier name="PodmiotZadanie.KontrahentOsobaVerifier" onadded="true"/>
+    </col>
+
+  </table>
+
+  <!-- [12288][8.1][CRM 8.1]: Przebudowa mechanizmu służącego do wyliczania kwot budżetu -->
+  <enum name="TypObrotuBudzetu" />
+
+  <table name="BudzetObrot" tablename="BudzetObroty" caption="Plan i realizacja na pozycji budżetu" tablecaption="Plany i realizacje na pozycjach budżetu.">
+
+    <key name="WgPozycjaTypData" keyprimary="true" keyunique="true">
+      <keycol name="Pozycja" />
+      <keycol name="Typ" />
+      <keycol name="Data" />
+    </key>
+
+    <col name="Pozycja"
+			 type="PozycjaBudzProj"
+			 category="Ogólne"
+			 required="true"
+			 relname="Obroty pozycji"
+			 description="Określna pozycję budżetu, dla której tworzony obrót."
+			 relguided="inner"
+			 delete="cascade"
+			 children="ObrotyPozycji" />
+
+    <col name="Typ" type="TypObrotuBudzetu" category="Ogólne" description="Określa typ obrotu budżetu." caption="Typ obrotu budżetu" />
+    <col name="Data" type="date" category="Ogólne" description="Określa datę." caption="Data" />
+
+    <col name="KwotaPrzychod" type="currency" category="Kwota" description="Określa kwotę dla przychodu." caption="Kwota przychodu" />
+    <col name="KwotaKoszt" type="currency" category="Kwota" description="Określa kwotę dla kosztu." caption="Kwota kosztu" />
+
+    <col name="IloscPrzychod" type="Amount" category="Ilość" description="Określa ilość dla przychodu." caption="Ilość przychodu" />
+    <col name="IloscKoszt" type="Amount" category="Ilość" description="Określa ilość dla kosztu." caption="Ilość kosztu" />
+
+  </table>
+
+  <table name="GoogleCalendar" tablename="GoogleCalendars" caption="Kalendarze Google" guided="Root">
+    <key name="WgCalendarId" keyunique="true" keyprimary="true">
+      <keycol name="CalendarId" />
+    </key>
+    <col name="CalendarId" type="string" length="100" keyprimary="true" />
+    <col name="NextSyncToken" type="string" length="50" />
+    <col name="Token" type="text" />
+  </table>
+
+</module>

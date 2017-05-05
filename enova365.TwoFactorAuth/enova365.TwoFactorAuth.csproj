@@ -1,0 +1,126 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>8.0.30703</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{607306D1-A570-42B7-AB5B-DA8B92770DFD}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>enova365.TwoFactorAuth</RootNamespace>
+    <AssemblyName>enova365.TwoFactorAuth</AssemblyName>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <TargetFrameworkProfile />
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>$(ProgramFiles)\Common Files\Soneta\Assemblies\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>$(ProgramFiles)\Common Files\Soneta\Assemblies\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Soneta.Business">
+      <SpecificVersion>False</SpecificVersion>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Soneta.Core">
+      <SpecificVersion>False</SpecificVersion>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Soneta.Types">
+      <SpecificVersion>False</SpecificVersion>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Soneta.Business.UI">
+      <SpecificVersion>False</SpecificVersion>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Rejestracje.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="TwoFactor.cs" />
+    <Compile Include="Utils\Tools.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Generator\Business.business.xml" />
+    <Content Include="Generator\Core.business.xml" />
+    <Content Include="Generator\CRM.business.xml" />
+    <Content Include="Generator\CzlonkowieSzkolenia.business.xml" />
+    <Content Include="Generator\Deklaracje.business.xml" />
+    <Content Include="Generator\Delegacje.business.xml" />
+    <Content Include="Generator\Dms.business.xml" />
+    <Content Include="Generator\EwidencjaVat.business.xml" />
+    <Content Include="Generator\Handel.business.xml" />
+    <Content Include="Generator\HR.business.xml" />
+    <Content Include="Generator\HR2.business.xml" />
+    <Content Include="Generator\Import.business.xml" />
+    <Content Include="Generator\Kadry.business.xml" />
+    <Content Include="Generator\Kalend.business.xml" />
+    <Content Include="Generator\Kasa.business.xml" />
+    <Content Include="Generator\Ksiega.business.xml" />
+    <Content Include="Generator\Magazyny.business.xml" />
+    <Content Include="Generator\Oceny.business.xml" />
+    <Content Include="Generator\Place.business.xml" />
+    <Content Include="Generator\Produkcja.business.xml" />
+    <Content Include="Generator\Przeszeregowania.business.xml" />
+    <Content Include="Generator\RMK.business.xml" />
+    <Content Include="Generator\Samochodowka.business.xml" />
+    <Content Include="Generator\Snapshots.business.xml" />
+    <Content Include="Generator\SrodkiTrwale.business.xml" />
+    <Content Include="Generator\Towary.business.xml" />
+    <Content Include="Generator\Waluty.business.xml" />
+    <Content Include="Generator\WebAuthorization.business.xml" />
+    <Content Include="Generator\Windykacja.business.xml" />
+    <Content Include="Generator\Workflow.business.xml" />
+    <Content Include="Generator\Zadania.business.xml" />
+    <Content Include="Soneta.Generator.exe" />
+    <EmbeddedResource Include="UI\TwoFactor.General.pageform.xml">
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Schema\Business.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Schema\Business.xsx" />
+    <None Include="Schema\Config.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Schema\Config.xsx" />
+    <None Include="Schema\Form.xsd">
+      <SubType>Designer</SubType>
+    </None>
+  </ItemGroup>
+  <ItemGroup />
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

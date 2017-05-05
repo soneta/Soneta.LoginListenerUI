@@ -1,0 +1,43 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<module xmlns="http://www.enova.pl/schema/business_struct.xsd" name="Import" namespace="Soneta.Import" versionName="enova">
+	<import>../..</import>
+	<using>Soneta.Core</using>
+	<using>Soneta.Config</using>
+	<using>Soneta.Waluty</using>
+	<using>Soneta.Kasa</using>
+
+	<table name="KwotySad" tablename="KwotySadow" >
+		<col name="Ewidencja" type="DokEwidencji" required="true" readonly="true"
+		  children="KwotySad" relname="Kwoty ewidencji Sad" relguided="inner"
+		  keyprimary="true" keyunique="true"/>
+
+		<col name="TabelaKursowa" type="TabelaKursowa" category="Ogólne" description="Tabela kursowa"/>
+		<col name="DataNotowania" type="date" category="Ogólne" description="Data notowania"/>
+		<col name="Kurs" type="double" category="Ogólne" description="Kurs waluty"/>
+		<col name="WartoscFakturyW" name12="WFakturyW" type="currency"
+		  category="Ogólne" description="Wartość faktury w walucie"/>
+		<col name="WartoscFaktury" name12="WFaktury" type="currency"
+		  category="Ogólne" description="Wartość faktury w walucie systemowej"/>
+		<col name="KosztTransportuZagranicznegoW" name12="KTZW" type="currency"
+		  category="Ogólne" description="Koszty transportu zagranicznego w walucie"/>
+		<col name="KosztTransportuZagranicznego" name12="KTZ" type="currency"
+		  category="Ogólne" description="Koszty transportu zagranicznego w walucie systemowej"/>
+		<col name="KosztUbezpieczenW" name12="KUW" type="currency"
+		  category="Ogólne" description="Koszty ubezpieczeń w walucie"/>
+		<col name="KosztUbezpieczen" name12="KU" type="currency"
+		  category="Ogólne" description="Koszty ubezpieczeń w walucie systemowej"/>
+		<col name="KosztOpakowanW" name12="KOW" type="currency"
+		  category="Ogólne" description="Koszty opakowań w walucie"/>
+		<col name="KosztOpakowan" name12="KO" type="currency"
+		  category="Ogólne" description="Koszty opakowań w walucie systemowej"/>
+		<col name="Clo" type="currency"/>
+		<col name="Akcyza" type="currency"/>
+		<col name="KosztTransportuKrajowego" name12="KTK" type="currency"
+		  category="Ogólne" description="Koszt transportu krajowego"/>
+		<col name="Vat" type="currency" category="Ogólne"/>
+		<col name="OplataManipulacyjna" name12="OM" type="currency"
+		  category="Ogólne" description="Opłata manipulacyjna"/>
+		<col name="Proforma" type="currency"/>
+	</table>
+
+</module>

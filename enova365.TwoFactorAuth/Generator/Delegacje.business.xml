@@ -1,0 +1,233 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+
+<module xmlns="http://www.enova.pl/schema/business_struct.xsd" name="Delegacje" namespace="Soneta.Delegacje" versionName="enova">
+	<import>../..</import>
+
+	<using>Soneta.Core</using>
+	<using>Soneta.Config</using>
+	<using>Soneta.Kadry</using>
+	<using>Soneta.Kasa</using>
+	<using>Soneta.Waluty</using>
+	<using>Soneta.Samochodowka</using>
+
+
+	<enum name="RodzajKosztuDelegacji" />
+	<enum name="AlgorytmRozliczeniaNoclegu" />
+	<enum name="StatusDelegacji" />
+
+
+	<table name="KrajDelegacji" tablename="KrajeDelegacji" caption="Kraj delegacji" config="true" tablecaption="Kraje delegacji" guided="Root" >
+		<interface>IRowWithHistory</interface>
+		<interface>IKrajDelegacji</interface>
+		<key name="WgKodu" keyprimary="true" keyunique="true" >
+			<keycol name="Kod" />
+		</key>
+		<col name="Kod" type="string" length="8" required="true" keyunique="true" caption="Kod kraju delegacji" description="Unikalny kod kraju delegacji." >
+			<verifier name="KrajDelegacji.KodVerifier" onadded="true" />
+		</col>
+		<col name="Kraj" type="KrajTbl" required="true" caption="Kraj" />
+		<col name="Blokada" type="boolean" caption="Blokada" description="Blokada - kraj zablokowany nie może być użyty do tworzenia nowych delegacji" />
+	</table>
+
+
+	<table name="StawkaDelegacji" tablename="StawkiDelegacji" caption="Stawka delegacji" config="true" tablecaption="Stawki delegacji" >
+		<col name="Kraj" type="KrajDelegacji" readonly="true" required="true" keyprimary="true" keyclass="History" keyclasscol="Aktualnosc"
+			 children="Historia" relname="Dane historyczne stawek delegacji" relguided="inner" delete="cascade" description="Kraj delegacji" />
+		<col name="Aktualnosc" type="FromTo" required="true" caption="Okres aktualności" description="Okres obowiązywania stawki" />
+		<col name="Dieta" type="currency" caption="Wysokość diety" description="Wysokość diety" >
+			<verifier name="StawkaDelegacji.SymbolWalutyDietaVerifier" onadded="true"/>
+		</col>
+		<col name="LimitNocleg" type="currency" caption="Limit na nocleg" description="Limit wydatków na nocleg">
+			<verifier name="StawkaDelegacji.SymbolWalutyLimitNoclegVerifier" onadded="true"/>
+		</col>
+		<!-- 10.1 -->
+		<col name="SposobOpodatkowania" type="SposobyUnikaniaPodwójnegoOpodatkowania" category="Ogólne" description="Rodzaj umowy o unikaniu podwójnego oodatkowania" />
+	</table>
+
+
+	<table name="Delegacja" tablename="Delegacje" caption="Delegacja PWS" tablecaption="Delegacje PWS" guided="Root">
+		<key name="WgDatyWystawienia" keyprimary="true">
+			<keycol name="DataWystawienia"/>
+		</key>
+		<!-- POLA SYSTEMOWE I FLAGI -->
+		<col name="Definicja" type="DefinicjaDokumentu" required="true" category="Ogólne" description="Definicja dokumentu"/>
+		<col name="StatusDelegacji" type="StatusDelegacji" readonly="set" category="Ogólne" description="Status delegacji." />
+		<!-- POLA PODSTAWOWE -->
+		<col name="DataWystawienia" type="date" category="Ogólne" description="Data wystawienia dokumentu delegacji PWS" />
+		<col name="Oddzial" type="OddzialFirmy" category="Ogólne" description="Oddział firmy" relright="true" >
+			<verifier name="OddzialRightsVerifier" onadded="true"/>
+			<verifier name="OddzialRequiredVerifier" onadded="true"/>
+		</col>
+		<col name="Seria" type="string" length="12" category="Ogólne" description="Seria dokumentu delegacji"/>
+		<col name="Numer" type="NumerDokumentu" category="Ogólne" description="Numer dokumentu delegacji PWS" />
+		<col name="Delegowany" type="IPodmiotKasowy" required="true" category="Ogólne" relname="Delegowany podmiot" description="Podmiot, dla rozliczenia którego wystawiono dokument PWS." />
+		<col name="KrajDocelowy" type="KrajDelegacji" category="Ogólne" relname="Kraj docelowy etapu delegacji" description="Kraj docelowy etapu delegacji." />
+		<col name="SrodekTransportu" type="string" length="32" category="Ogólne" description="Domyślny środek transportu." >
+			<attribute>Dictionary("PWS.DefTransport", ManualList=true)</attribute>
+		</col>
+		<col name="KurierDyplomatyczny" type="boolean" category="Ogólne" description="Delegacja kuriera dyplomatycznego - dieta zwiększona o 25%."/>
+		<col name="JestCiagla" type="boolean" category="Ogólne" description="Czy system ma pilnować aby początek kolejnego etapu pokrywał się z końcem poprzedniego."/>
+		<col name="Cel" type="text" category="Ogólne" description="Cel delegacji." />
+		<!-- DATY ROZPOCZECIA I ZAKONCZENIA DELEGACJI -->
+		<col name="DataRozpoczeciaPlanowana" type="datetime" cstype="DateShortTime" required="true" category="Ogólne" description="Planowany czas rozpoczęcia delegacji." >
+			<verifier name="Delegacja.DataZakonczeniaPlanowanaVerifier"/>
+		</col>
+		<col name="DataZakonczeniaPlanowana" type="datetime" cstype="DateShortTime" required="true" category="Ogólne" description="Planowany czas zakończenia delegacji." >
+			<verifier name="Delegacja.DataZakonczeniaPlanowanaVerifier" />
+		</col>
+		<col name="DataRozpoczeciaWgEtapow" type="datetime" cstype="DateShortTime" readonly="set" category="Ogólne" description="Data rozpoczecia delegacji (pierwszego etapu)."/>
+		<col name="DataZakonczeniaWgEtapow" type="datetime" cstype="DateShortTime" readonly="set" category="Ogólne" description="Data zakonczenia delegacji (ostatniego etapu)."/>
+		<!-- POLA ROZLICZENIOWE -->
+		<col name="DataRozliczenia" type="date" category="Ogólne" description="Data rozliczenia delegacji."/>
+		<col name="DataKursu" type="date" category="Ogólne" description="Data kursu do tabeli kursowej."/>
+		<col name="TabelaKursowa" type="TabelaKursowa" category="Ogólne" description="Tabela kursowa do rozliczenia delegacji."/>
+		<col name="KonsolidujPlatnosci" type="boolean" category="Ogólne" description="Włącza konsolidację płatności wyrażonych w tej samej walucie." />
+		<!-- ISO -->
+		<col name="NumerProceduryISO" type="string" length="20" readonly="set" category="ISO" description="Numer procedury ISO" />
+		<!-- EXTENSION -->
+		<col name="Extension" type="text" modifier="protected" category="Ogólne" description="Rozszerzenie dla pól wirtualnych"/>
+		<!-- INTEGRACJA Z KADRY PLACE -->
+		<col name="Wniosek" type="WniosekUrlopowy" required="false" readonly="true" category="Kadry" description="Źródłowy wniosek urlopowy" relname="Delegacja do wniosku" delete="cascade" children="DelegacjePWS" />
+		<col name="Uwagi" type="text" category="Kadry" description="Uwagi do delegacji" />
+	</table>
+
+
+	<table name="EtapDelegacji" tablename="EtapyDelegacji" caption="Etap delegacji" tablecaption="Etapy delegacji" >
+		<col name="Delegacja" type="Delegacja" required="true" keyprimary="true" readonly="true" category="Ogólne" children="Etapy" delete="cascade" relguided="inner" relname="Etap delegacji" description="Delegacja, do której należy ten etap" >
+			<keycol name="Rozpoczecie"/>
+		</col>
+		<col name="Kraj" type="KrajDelegacji" category="Ogólne" relname="Kraj etapu delegacji" description="Kraj docelowy etapu delegacji." >
+			<verifier name="EtapDelegacji.KrajVerifier" onadded="true" />
+		</col>
+		<col name="Rozpoczecie" type="datetime" cstype="DateShortTime" category="Ogólne" description="Rozpoczęcie etapu delegacji.">
+			<verifier name="EtapDelegacji.RozpoczecieVerifier" onadded="true" />
+		</col>
+		<col name="Zakonczenie" type="datetime" cstype="DateShortTime" category="Ogólne" description="Zakończenie etapu delegacji.">
+			<verifier name="EtapDelegacji.ZakonczenieVerifier" onadded="true" />
+		</col>
+		<col name="MiejscowoscRozpoczecia" type="string" length="32" category="Ogólne" description="Miejscowość rozpoczęcia etapu delegacji.">
+			<attribute>Dictionary("Miejscowość", ManualList=true)</attribute>
+		</col>
+		<col name="MiejscowoscZakonczenia" type="string" length="32" category="Ogólne" description="Miejscowość zakończenia etapu delegacji." >
+			<attribute>Dictionary("Miejscowość", ManualList=true)</attribute>
+		</col>
+		<col name="SrodekTransportu" type="string" length="32" category="Ogólne" description="Domyślny środek transportu." >
+			<attribute>Dictionary("PWS.DefTransport", ManualList=true)</attribute>
+		</col>
+		<col name="LP" type="int" readonly="set" batchfield="false" category="Ogólne" description="Liczba porządkowa etapu delegacji." />
+		<col name="NaliczenieLP" type="int" readonly="set" specialaccess="true" category="Ogólne" description="Liczba porządkowa naliczenia dla tego etapu delegacji." />
+		<!-- wyżywienie -->
+		<col name="PelneWyzywienie" type="boolean" category="Ogólne" description="Czy delegowany miał zapewnione pełne wyżywienie."/>
+		<col name="LiczbaSniadan" type="int" category="Ogólne" description="Liczba śniadań zapewniona przez pracowdawcę (tylko zagraniczna)."/>
+		<col name="LiczbaObiadow" type="int" category="Ogólne" description="Liczba obiadów zapewniona przez pracowdawcę (tylko zagraniczna)."/>
+		<col name="LiczbaKolacji" type="int" category="Ogólne" description="Liczba kolacji zapewniona przez pracowdawcę (tylko zagraniczna)."/>
+		<col name="EkwiwalentWyzywienie" type="currency" category="Ogólne" description="Zbiorcza kwota jaką pracownik otrzymał na wyżywienie (tylko zagraniczna)."/>
+		<!-- inne -->
+		<col name="DniSzpital" type="int" category="Ogólne" description="Liczba dni spędzona na leczeniu szpitalnym (tylko zagraniczna)."/>
+		<col name="DojazdIloscRyczaltow" type="decimal" readonly="set" category="Ogólne" description="Ilość ryczałtów na dojazd z dworca do miejsca zakwaterowania (tylko zagraniczna)."/>
+		<col name="GrupujWgKrajow" type="boolean" category="Ogólne" description="Etap zostanie rozliczony łącznie z innymi etapami do tego samego kraju."/>
+	</table>
+
+
+	<table name="KosztDelegacji" tablename="KosztyDelegacji" caption="Koszt etapu delegacji" tablecaption="Koszty etapu delegacji" guided="Root">
+		<col name="Etap" type="EtapDelegacji" required="true" keyprimary="true" readonly="true" keyclass="Lp" keyclasscol="Lp" category="Ogólne" children="Koszty" delete="cascade" relguided="inner" relname="Koszty etapu" description="Etap delegacji, do którego należy koszty" />
+		<col name="Lp" type="int" required="true" batchfield="false" category="Ogólne"/>
+		<col name="Data" type="date" category="Ogólne" description="Data poniesienia kosztu" >
+			<verifier name="KosztDelegacji.DataVerifier" onadded="true" />
+		</col>
+		<col name="Korekta" type="boolean" category="Ogólne" description="Czy dane mają być traktowane jako korekta - czyli z odwrotnym znakiem">
+			<verifier name="KosztDelegacji.RodzajVerifier" onadded="true" />
+		</col>
+		<col name="Rodzaj" type="RodzajKosztuDelegacji" category="Ogólne" description="Klasyfikacja kosztu delegacji" >
+			<verifier name="KosztDelegacji.RodzajVerifier" onadded="true" />
+			<verifier name="KosztDelegacji.OpisVerifier" />
+		</col>
+		<col name="Koszt" type="currency" category="Ogólne" description="Wartość kosztu do rozliczenia w delegacji">
+			<verifier name="KosztDelegacji.KosztVerifier" onadded="true" />
+		</col>
+		<col name="Opis" type="string" length="80" category="Ogólne" description="Opis poniesionego kosztu">
+			<verifier name="KosztDelegacji.OpisVerifier" onadded="true"/>
+			<attribute>Dictionary("Opis-KosztDeleg", ManualList=true)</attribute>
+		</col>
+		<col name="DokPrzejazd" type="Przejazd" category="Ogólne" description="Podpięta informacja o przejeździe samochodem." >
+			<verifier name="KosztDelegacji.DokPrzejazdVerifier" onadded="true"/>
+		</col>
+		<col name="DokEwidencja" type="DokEwidencji" category="Ogólne" description="Podpięty dokument ewidencji." >
+			<verifier name="KosztDelegacji.DokEwidencjaVerifier" onadded="true"/>
+		</col>
+	</table>
+
+
+	<table name="ZaliczkaDelegacji" tablename="ZaliczkiDeleg" caption="Zaliczka do delegacji" tablecaption="Zaliczki do delegacji">
+		<col name="Delegacja" type="Delegacja" required="true" keyprimary="true" readonly="true" keyclass="Lp" keyclasscol="Lp" category="Ogólne" children="Zaliczki" delete="cascade" relguided="inner" relname="Zaliczki delegacji" description="Zaliczki wypłacone do delegacji." />
+		<col name="Lp" type="int" required="true" batchfield="false" category="Ogólne" description="Numer kolejny rozliczenia" />
+		<col name="DokWyplaty" type="Zaplata" category="Ogólne" description="Dokument zaliczki" relname="Wypłaty do zaliczek delegacji" />
+		<col name="Kwota" type="currency" category="Ogólne" description="Kwota zaliczki" >
+			<verifier name="ZaliczkaDelegacji.KwotaReqVerifier" onadded="true"/>
+			<verifier name="ZaliczkaDelegacji.KwotaValueVerifier" onadded="true"/>
+		</col>
+	</table>
+
+
+	<table name="ZakupWalutDoDelegacji" tablename="ZakupyWalutDeleg" caption="Pozyskanie walut" tablecaption="Pozyskanie">
+		<col name="Delegacja" type="Delegacja" required="true" keyprimary="true" readonly="true" keyclass="Lp" keyclasscol="Lp" category="Ogólne" children="ZakupyWalut" delete="cascade" relguided="inner" relname="Zakupy walut delegacji" description="Pozyskanie walut na delegację." />
+		<col name="Lp" type="int" required="true" category="Ogólne" description="Numer kolejny rekordu pozyskania walut" />
+		<col name="WalutaZakupiona" type="currency" category="Ogólne" description="Waluta zakupiona." >
+			<verifier name="ZakupWalutDoDelegacji.WalutaZakupionaVerifier" onadded="true"/>
+		</col>
+		<col name="KosztZakupu" type="currency" category="Ogólne" description="Koszt zakupu waluty." >
+			<verifier name="ZakupWalutDoDelegacji.KosztZakupuVerifier" onadded="true"/>
+		</col>
+	</table>
+
+
+	<table name="NaliczenieDelegacji" tablename="NalDelegacji" caption="Naliczenie pośrednie delegacji" tablecaption="Naliczenia pośrednie delegacji" >
+		<col name="Delegacja" type="Delegacja" required="true" keyprimary="true" readonly="true" category="Ogólne" children="Naliczenia" delete="cascade" relguided="inner" relright="true" relname="Naliczenie delegacji" description="Delegacja, do której należy to naliczenie." >
+			<keycol name="Lp"/>
+		</col>
+		<col name="Lp" type="int" required="true" batchfield="false" category="Ogólne" readonly="true" description="Numer kolejny rozliczenia" />
+		<col name="Kraj" type="KrajDelegacji" required="true" readonly="true" category="Ogólne" relname="Kraj rozliczenia delegacji" description="Kraj rozliczenia etapu delegacji." />
+		<col name="CzyKrajowa" type="boolean" readonly="set" category="Ogólne" description="Czy delegacja rozliczana jest wg wzorca krajowego." />
+		<col name="CzasTrwania" type="time" readonly="set" category="Ogólne" description="Sumaryczny czas trwania"/>
+		<col name="ListaEtapow" type="string" readonly="set" length="32" category="Ogólne" description="Lista etapów wchodząca w skład rozliczenia"/>
+		<!-- DIETA - pola oryginalnie obliczone wg algorytmu oraz korygowane -->
+		<col name ="DietaKwota" type="currency" readonly="set" category="Ogólne" description="Kwota diety dla wskaznego kraju delegacji." />
+		<col name ="DietaKwotaKor" type="currency" category="Ogólne" description="Kwota diety dla wskaznego kraju delegacji (korekta)." />
+		<col name ="DietaIloscNalezna" type="double" readonly="set" category="Ogólne" description="Nalezna ilość diet wynikająca z czasu trwania delegacji."/>
+		<col name ="DietaIloscZapewniona" type="double" readonly="set" category="Ogólne" description="Ilość diet zapewniona w postaci posiłków lub pobytu w szpitalu."/>
+		<col name ="DietaIloscRozliczenieKor" type="double" category="Ogólne" description="Ilość diet do rozliczenia (korekta)."/>
+		<col name ="DietaEkwiwalent" type="currency" readonly="set"  category="Ogólne" description="Ekwiwalent wypłacony." />
+		<col name ="DietaRozliczenie" type="currency" readonly="set" category="Ogólne" description="Rozliczenie diety." />
+		<col name ="DietaRozliczenieKor" type="currency" category="Ogólne" description="Rozliczenie diety (korekta)." />
+		<!-- KOMUNIKACJA MIEJSCA -->
+		<col name ="KomunikacjaRyczalt" type="boolean" category="Ogólne" description="Czy delegowanemu należą się ryczałtkowe koszty komunikacji miejskiej."/>
+		<col name ="KomunikacjaRozliczenie" type="currency" readonly="set" category="Ogólne" description="Ryczałtowy zwrot za komunikację miejską."/>
+		<col name ="KomunikacjaRozliczenieKor" type="currency" category="Ogólne" description="Ryczałtowy zwrot za komunikację miejską (korygowany)."/>
+		<!-- RYCZALT NA DOJAZD DO MIESCJA ZAKWATEROWANIA (ZAGRANICA) -->
+		<col name ="DojazdIloscRyczaltow" type="decimal" readonly="set" category="Ogólne" description="Ilość ryczałtów na dojazd z dworca do miejsca zakwaterowania."/>
+		<col name ="DojazdRozliczenie" type="currency" readonly="set" category="Ogólne" description="Ryczałtowy zwrot za dojazd z dworca do miejsca zakwaterowania."/>
+		<!-- ZAKWATEROWANIE -->
+		<col name ="NoclegIlosc" type="int" readonly="set" category="Ogólne" description="Ilość noclegów."/>
+		<col name ="NoclegIloscKor" type="int" category="Ogólne" description="Ilość noclegów (korekta)."/>
+		<col name ="NoclegLimit" type="currency" readonly="set" category="Ogólne" description="Limit na nocleg." />
+		<col name ="NoclegLimitKor" type="currency" category="Ogólne" description="Limit na nocleg (korekta)." />
+		<col name ="NoclegAlgorytm" type="AlgorytmRozliczeniaNoclegu" category="Ogólne" description="Algorytm rozliczenia noclegu." />
+		<col name ="NoclegRachunki" type="currency" readonly="set" category="Ogólne" description="Wydatki na nocleg wg załączonych rachunków." />
+		<col name ="NoclegRozliczenie" type="currency" readonly="set" category="Ogólne" description="Rozliczenie noclegu." />
+		<!-- ZSUMOWANE POLA KOSZTOWE -->
+		<col name ="WydatkiInne" type="currency" readonly="set" category="Ogólne" description="Suma wydatków na inne wydatki." />
+		<col name ="WydatkiSamochod" type="currency" readonly="set" category="Ogólne" description="Suma wydatków na transport własnym samochodem." />
+		<col name ="WydatkiTransport" type="currency" readonly="set" category="Ogólne" description="Suma wydatków na środki publiczne transportu." />
+	</table>
+
+	<table name="KwotaNaliczeniaDelegacji" tablename="KwotaNalDeleg" caption="Kwota naliczenia delegacji" tablecaption="Kwoty naliczenia delegacji" >
+		<col name="Naliczenie" type="NaliczenieDelegacji" required="true" keyprimary="true" readonly="true" category="Ogólne" children="Kwoty" delete="cascade" relguided="inner" relname="Kwoty naliczen delegacji" description="Kwota w walucie do naliczenia delegacji." >
+			<keycol name="SymbolWaluty"/>
+		</col>
+		<col name="SymbolWaluty" type="string" length="3" readonly="true" required="true" category="Ogólne" description="Waluta naliczenia delegacji" />
+		<col name="Kwota" type="currency" readonly="set" category="Ogólne" description="Kwota naliczenia delegacji w walucie" />
+		<col name="Kurs" type="double" category="Ogólne" description="Kurs do przeliczenia kwoty w walucie" />
+		<col name="RozliczPln" type="boolean" category="Ogólne" description="Czy płatności mają być od razu generowane w walucie systemowej." />
+	</table>
+</module>
+

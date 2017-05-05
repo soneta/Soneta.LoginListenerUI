@@ -1,0 +1,339 @@
+﻿<?xml version = "1.0" encoding = "utf-8" ?>
+
+<module xmlns="http://www.enova.pl/schema/business_struct.xsd" name="SrodkiTrwale" namespace="Soneta.SrodkiTrwale" versionName="enova" >
+	<import>../..</import>
+
+	<using>Soneta.Core</using>
+	<using>Soneta.Config</using>
+	<using>Soneta.Kadry</using>
+	<using>Soneta.Towary</using>
+
+	<interface name="IInwentarz" />
+
+	<enum name="TypSrodkaTrwalego" />
+	<enum name="MetodaAmortyzacji" />
+	<enum name="StanSrodkaTrwalego" />
+	<enum name="RodzajSezonowosci" />
+	<enum name="TypObrotuST" />
+	<enum name="KierunekObrotuST" />
+	<enum name="MetodaObliczeniaWartosciMSR" />
+
+
+	<!-- Usage: SrodekTrwalyBaseHistoria -->
+	<subrow name="Sezonowosc" >
+		<col name="Rodzaj" type="RodzajSezonowosci" category="Sezonowość" description="Rodzaj sezonowości" />
+		<col name="Wartosc" type="string" length="12" modifier="protected" category="Sezonowość" />
+		<col name="Proporcjonalnie" type="boolean" description="Proporcjonalnie do liczby okresów lub 1/12" category="Sezonowość" />
+	</subrow>
+
+
+	<!-- Usage: SrodekTrwalyBaseHistoria, ParametrOdpisu -->
+	<subrow name="ParametryAmortyzacji" >
+		<col name="Metoda" type="MetodaAmortyzacji" category="Ogólne" description="Metoda amortyzacji środka trwałego" />
+		<col name="Stawka" type="percent" category="Ogólne" description="Stawka amortyzacji środka trwałego" />
+		<col name="Wspolczynnik" type="decimal" caption="Współczynnik" category="Ogólne" description="Współczynnik amortyzacji środka trwałego" />
+	</subrow>
+
+
+	<!--RODZAJST-->
+	<table name="RodzajST" tablename="KRST" guided="Root" tablecaption="Klasyfikacja Rodzajowa Środków Trwałych" caption="Rodzaj środków trwałych" config="true" >
+		<key name="WgTypu" keyunique="true" keyprimary="true" >
+			<keycol name="Typ" />
+			<keycol name="Symbol" />
+		</key>
+
+		<col name="Typ" type="TypSrodkaTrwalego" required="true" readonly="true" selector="true" category="Ogólne" description="Typ rodzaju środka trwałego" />
+		<col name="Symbol" type="string" length="10" required="true" category="Ogólne" >
+			<attribute>NumeratorItem</attribute>
+			<attribute>NumeratorInfo(NumeratorInfoType.str, "291")</attribute>
+		</col>
+		<col name="Blokada" type="boolean" category="Ogólne" description="Środek zablokowany" />
+		<col name="StawkaOd" type="percent" category="Ogólne" description="Min. stwaka amortyzacji" />
+		<col name="StawkaDo" type="percent" category="Ogólne" description="Max. stwaka amortyzacji" />
+		<col name="Opis" type="string" length="128" category="Ogólne" description="Opis rodzaju środków trwałych" />
+		<col name="OpisPelny" type="text" caption="Opis pełny" category="Ogólne" description="Opis pełny rodzaju środków trwałych" />
+		<col name="PKOB" type="string" length="32" category="Ogólne" description="Państwowa Klasyfikacja Obiektów Budowlanych" />
+		<col name="PKWiU" type="string" length="200" category="Ogólne" description="Państwowa Klasyfikacja Wyrobów i Usług" />
+		<col name="KRST91" type="string" length="128" category="Ogólne" />
+		<col name="KSTPoprzednia" type="string" length="128" category="Ogólne" />
+	</table>
+
+
+	<!--MIEJSCEUZYTKOWANIA-->
+	<table name="MiejsceUzytkowania" name8="MiejUzyt" tablename="MiejscaUzytk" tablecaption="Miejsca użytkowania" caption="Miejsce użytkowania" config="true" guided="Root" >
+		<interface>IRightsSource</interface>
+
+		<key name="WgNazwy" keyunique="true" keyprimary="true" >
+			<keycol name="Nazwa" />
+		</key>
+
+		<col name="Nazwa" type="string" length="30" category="Ogólne" description="Nazwa miejsca użytkowania srodka trwałego" >
+			<attribute>NumeratorItem</attribute>
+			<attribute>NumeratorInfo(NumeratorInfoType.str, "Oddział I")</attribute>
+		</col>
+		<col name="Oddzial" type="OddzialFirmy" category="Ogólne" relname="Oddział firmy do którego należy miejsce użytkowania" />
+		<col name="Opis" type="string" length="255" category="Ogólne" description="Opis miejsca użytkowania srodka trwałego" />
+	</table>
+
+
+	<!--TYTULDOKUMENTUST-->
+	<table name="TytulDokumentuST" name8="TytDokST" tablename="TytulyDokST" tablecaption="Tytuły dokumentów" caption="Tytuł dokumentu" guided="Root" config="true" >
+		<key name="WgTytulu" keyunique="true" keyprimary="true" >
+			<keycol name="Tytul" />
+		</key>
+
+		<col name="Tytul" type="string" length="80" required="true" caption="Tytuł" />
+	</table>
+
+
+	<!--ZESTAWST-->
+	<table name="ZestawST" tablename="ZestawyST" tablecaption="Zestawy środków trwałych" caption="Zestaw środków trwałych" guided="Root" >
+		<key name="WgNazwy" keyunique="true" keyprimary="true" >
+			<keycol name="Nazwa" />
+		</key>
+
+		<col name="Nazwa" type="string" length="30" required="true" category="Ogólne" description="Nazwa zestawu środków trwałych" />
+		<col name="Opis" type="string" length="255" category="Ogólne" description="Opis zestawu środków trwałych" />
+	</table>
+
+
+	<!-- POZYCJATERMINARZAINW -->
+	<table name="PozycjaTerminarzaInw" name8="PozTerm" tablename="TerminarzInw" caption="Pozycja terminarza inwentarza" tablecaption="Terminarz inwentarza" warnings="Off" >
+		<col name="Inwentarz" type="IInwentarz" required="true" readonly="true" children="Terminarz" relname="Terminy pozycji inwentarzu" delete="cascade" keyprimary="true" category="Ogólne" description="Pozycja inwentarzu" />
+		<col name="Nazwa" type="string" length="30" required="true" category="Ogólne" description="Nazwa pozycji terminarza" />
+		<col name="DataPlanowana" type="date" required="true" category="Ogólne" description="Planowana data realizacji" />
+		<col name="DataRealizacji" type="date" category="Ogólne" description="Data realizacji" />
+		<col name="Opis" type="string" length="80" category="Ogólne" description="Opis pozycji terminarza" />
+	</table>
+
+
+	<!--PARAMETRODPISU-->
+	<table name="ParametrOdpisu" name8="ParamAm" tablename="ParametryOdpisow" caption="Parametr odpisu" tablecaption="Parametry odpisów" >
+		<col name="Amortyzacja" type="ObrotST" readonly="true" required="true" relguided="inner" children="Parametr" relname="Parametr amortyzacji" keyprimary="true" keyunique="true" category="Ogólne" description="Odpis amortyzacyjny" />
+		<col name="ParametryBilansowe" name12="PB" type="ParametryAmortyzacji" category="Ogólne" description="Parametry amortyzacji bilansowej" />
+		<col name="MetodaDodatkowaBilansowa" name12="MDB" type="MetodaAmortyzacji" category="Ogólne" description="Dodatkowa metoda amortyzacji bilansowej" />
+		<col name="ParametryPodatkowe" name12="PP" type="ParametryAmortyzacji" category="Ogólne" description="Parametry amortyzacji podatkowej" />
+		<col name="MetodaDodatkowaPodatkowa" name12="MDP" type="MetodaAmortyzacji" category="Ogólne" description="Dodatkowa metoda amortyzacji podatkowej" />
+	</table>
+
+
+	<!--ELEMPLANUAMORTYZACJI-->
+	<table name="ElemPlanuAmortyzacji" tablename="PlanAmortyzacji" caption="Element planu amortyzacji" tablecaption="Plan amortyzacji" >
+		<key name="WgDaty" >
+			<keycol name="Data" />
+		</key>
+		<col name="Srodek" type="SrodekTrwalyBase" readonly="true" required="true" relname="Plan amortyzacji środka trwałego" reldefault="true" delete="cascade" relguided="inner" relright="true" children="PlanAmortyzacji" keyclass="Date" keyclasscol="Data" keyprimary="true" category="Ogólne" />
+		<col name="Data" type="date" required="true" category="Ogólne" description="Data planowanej amortyzacji" />
+		<col name="WartoscBilansowa" type="currency" name12="WartoscB" caption="Wartość bilansowa" category="Ogólne" description="Wartość bilansowa" />
+		<col name="WartoscPodatkowa" type="currency" name12="WartoscP" caption="Wartość podatkowa" category="Ogólne" description="Wartość podatkowa" />
+	</table>
+
+
+	<!--SRODEKTRWALYBASE-->
+	<table name="SrodekTrwalyBase" name8="SrdTrw" tablename="SrodkiTrwale" caption="Środek trwały - wartość niematerialna i prawna" tablecaption="Ewidencja środków trwałych oraz wartości niematerialnych i prawnych" guided="Root" >
+		<interface>IInwentarz</interface>
+		<interface>IElementSlownika</interface>
+		<interface>IZasobCRM</interface>
+		<interface>IKodowany</interface>
+		<interface>IZrodloPodzielnikaKosztow</interface>
+
+		<key name="WgNazwy" >
+			<keycol name="Nazwa" />
+		</key>
+		<key name="WgNumeruInwentarzowego" keyprimary="true" keyunique="true" >
+			<keycol name="NumerInwentarzowy" />
+		</key>
+
+		<!-- Ogólne -->
+		<col name="Typ" type="TypSrodkaTrwalego" required="true" readonly="true" selector="true" category="Ogólne" description="Typ środka trwałego" />
+		<col name="NumerInwentarzowy" type="string" length="40" required="true" category="Ogólne" description="Numer inwentarzowy środka trwałego" />
+		<col name="Nazwa" type="string" length="120" required="true" category="Ogólne" description="Nazwa środka trwałego" >
+			<attribute>Dictionary("Nazwa środka", ManualList=true)</attribute>
+		</col>
+		<col name="NumerFabryczny" type="string" length="40" category="Ogólne" description="Numer fabryczny środka trwałego" />
+		<col name="Opis" type="string" length="255" category="Ogólne" description="Opis środka trwałego" >
+			<attribute>ControlEdit(ControlEditKind.Memo)</attribute>
+		</col>
+		<!--Inwentarz w firmie-->
+		<col name="PozyskanieNrDokumentu" type="string" length="40" name12="PozyskNrDok" category="Inwentarz w firmie" caption="Nr dokumentu pozyskania" />
+		<col name="PozyskanieData" type="date" name12="PozyskData" category="Inwentarz w firmie" caption="Data pozyskania" />
+		<col name="PozyskanieDokIdent" type="guid" category="Inwentarz w firmie" modifier="internal" readonly="set" description="GUID dokumentu ewidencji - pozyskanie" />
+		<col name="ZbycieNrDokumentu" type="string" length="40" name12="ZbytNrDok" category="Inwentarz w firmie" caption="Nr dokumentu zbycia" />
+		<col name="ZbycieData" type="date" name12="ZbytData" category="Inwentarz w firmie" caption="Data zbycia" />
+		<col name="ZbycieDokIdent" type="guid" category="Inwentarz w firmie" modifier="internal" readonly="set" description="GUID dokumentu ewidencji - zbycia" />
+		<!--Amortyzacja-->
+		<col name="RozpoczecieAmortyzacji" type="boolean" name12="RozAmort" category="Amortyzacja" description="Rozpoczęcie amortyzacji 1 dnia miesiąca rozpoczęcia użytkowania lub następnego." />
+		<col name="DataRozpoczeciaAmortyzacji" type="date" name12="DataRozAmort" category="Amortyzacja" readonly="set" description="Data rozpoczęcia amortyzacji środka trwałego (według OT)" />
+		<col name="DataZakonczeniaAmortyzacji" type="date" name12="DataZakAmort" category="Amortyzacja" readonly="set" specialaccess="true" caption="Data zakończenia amortyzacji" description="Data zakończenia amortyzacji" />
+		<!--Stan-->
+		<col name="Stan" type="StanSrodkaTrwalego" category="Stan" description="Stan środka trwałego" />
+		<col name="DataRejestracji" type="date" name12="DataRej" category="Stan" description="Data rejestracji środka trwałego (według OT)" />
+		<col name="DataRozpoczeciaUzytkowania" type="date" name12="DataRozUzytk" category="Stan" description="Data rozpoczęcia użytkowania środka trwałego" />
+		<col name="DataLikwidacji" type="date" name12="DataLikwid" category="Stan" description="Data likwidacji środka trwałego (likwidacji, sprzedaży, darowizny ...)" />
+		<!--BO-->
+		<col name="DataBO" type="date" category="BO" description="Data bilansu otwarcia środka trwałego" />
+		<col name="WartoscPoczatkowaBilansowaBO" type="currency" name12="WPBBO" category="BO" description="Wartość początkowa bilansowa bilansu otwarcia" />
+		<col name="WartoscPoczatkowaPodatkowaBO" type="currency" name12="WPPBO" category="BO" description="Wartość początkowa podatkowa bilansu otwarcia" />
+		<col name="WartoscBilansowaBO01" type="currency" name12="WBBO01" category="BO" description="Wartość bilansowa na 01.01 roku bilansu otwarcia" />
+		<col name="WartoscPodatkowaBO01" type="currency" name12="WPBO01" category="BO" description="Wartość podatkowa na 01.01 roku bilansu otwarcia" />
+		<col name="OdpisyBilansoweBO01" type="currency" name12="OBBO01" category="BO" description="Odpisy bilansowe do 01.01 roku bilansu otwarcia" />
+		<col name="OdpisyPodatkoweBO01" type="currency" name12="OPBO01" category="BO" description="Odpisy podatkowe na 01.01 roku bilansu otwarcia" />
+		<col name="WartoscBilansowaBO" type="currency" name12="WBBO" category="BO" description="Wartość bilansowa na dzień bilansu otwarcia" />
+		<col name="WartoscPodatkowaBO" type="currency" name12="WPBO" category="BO" description="Wartość podatkowa na dzień  bilansu otwarcia" />
+		<col name="OdpisyBilansoweBO" type="currency" name12="OBBO" category="BO" description="Odpisy bilansowe do dnia bilansu otwarcia" />
+		<col name="OdpisyPodatkoweBO" type="currency" name12="OPBO" category="BO" description="Odpisy podatkowe do dnia bilansu otwarcia" />
+		<col name="DataRozpoczeciaUzytkowaniaBO" type="date" name12="DRUBO" category="BO" description="Data rozpoczęcia użytkowania BO" />
+		<col name="DataRozpoczeciaAmortyzacjiBO" type="date" name12="DRABO" category="BO" description="Data rozpoczęcia amortyzacji BO" />
+		<col name="MiejsceUzytkowania" type="MiejsceUzytkowania" category="System" relname="Miejsce użytkowania środka" relright="false" >
+			<verifier name="SrodekTrwalyBase.MiejsceUzytkowaniaRequiredVerifier" onadded="true" />
+		</col>
+		<!-- BO MSR -->
+		<col name="DataBOMSR" type="date" category="BO MSR" description="Data bilansu otwarcia wartości MSR" />
+		<col name="MetodaBOMSR" type="MetodaObliczeniaWartosciMSR" category="BO MSR" description="Metoda obliczenia wartości MSR" />
+		<col name="WspolczynnikBOMSR" type="percent" category="BO MSR" description="Wartość współczynnika obliczenia wartości MSR" />
+		<col name="WartoscBOMSR" type="currency" category="BO MSR" description="Wartość bilansu otwarcia MSR" />
+	</table>
+
+
+	<!--SRODEKTRWALYBASEHISTORIA-->
+	<table name="SrodekTrwalyBaseHistoria" name8="SrdTrwH" tablename="SrodkiTrwaleHist" caption="Środek trwały - wartość niematerialna i prawna - historia" tablecaption="Ewidencja środków trwałych oraz wartości niematerialnych i prawnych - historia" >
+		<col name="Srodek" type="SrodekTrwalyBase" readonly="true" required="true" relname="Zapis historyczny środka trwałego" reldefault="true" delete="cascade" relguided="inner" relright="true" children="Historia" keyclass="History" keyclasscol="Aktualnosc" keyprimary="true" />
+		<col name="Aktualnosc" name12="Akt" type="FromTo" required="true" category="Historia" />
+		<col name="Typ" type="TypSrodkaTrwalego" required="true" readonly="true" selector="true" category="Ogólne" description="Typ środka trwałego" />
+		<col name="KRST" type="RodzajST" required="true" caption="KRŚT" relname="Środek trwały rodzaju" reldefault="true" category="Ogólne" description="Rodzaj środka trwałego według KRŚT" />
+		<col name="Ilosc" type="double" required="true" caption="Ilość" />
+		<col name="JednostkaMiary" type="Jednostka" required="true" caption="Jm." />
+		<!--Inwentarz w firmie-->
+		<col name="MiejsceUzytkowania" type="MiejsceUzytkowania" name12="MiejscUzytk" caption="Miejsce użytkowania" relname="Miejsce użytkowania środka trwałego" category="Inwentarz w firmie" description="Miejsce użytkowania środeka trwałego" />
+		<col name="CentrumKosztow" type="CentrumKosztow" caption="Centrum kosztów" relname="Centrum kosztów środka trwałego" category="Inwentarz w firmie" description="Centrum kosztów środka trwałego" />
+		<col name="Odpowiedzialny" type="Pracownik" relname="Środki trwałe pracownika" children="SrodkiTrwaleHistoria" category="Inwentarz w firmie" description="Pracownik odpowiedzialny za środek trwały" />
+		<col name="Nazwisko" type="string" length="30" category="Inwentarz w firmie" description="Nazwisko osoby odpowiedzialnej za środek trwały" />
+		<!--Amortyzacja-->
+		<col name="Bilansowa" type="ParametryAmortyzacji" category="Amortyzacja" description="Parametry amortyzacji bilansowej" />
+		<col name="Podatkowa" type="ParametryAmortyzacji" category="Amortyzacja" description="Parametry amortyzacji podatkowej" />
+		<col name="UlgaInwestycyjna" type="currency" name12="UlgaInw" category="Amortyzacja" description="Wartość zaliczona do ulgi inwestycyjnej" />
+		<col name="UlgaInwestycyjna30" type="currency" name12="UlgaInw30" category="Amortyzacja" description="Wartość 30% ulgi inwestycyjnej w pierwszym roku użytkowania" />
+		<col name="Sezonowosc" type="Sezonowosc" name12="Sez" caption="Sezonowość" category="Sezonowość" description="Sezonowość środka trwałego" />
+		<col name="Zestaw" type="ZestawST" relname="Elementy zestawu" children="SrodkiTrwaleHistoria" category="Zestaw" description="Zestaw, do którego należy środek trwały" />
+		<!--Wartości-->
+		<col name="WartoscRynkowa" type="currency" name12="WartRynk" caption="Wartość rynkowa" category="Stan" description="" />
+		<col name="DataWyceny" type="date" category="Stan" description="Data wyceny wartości rynkowej środka trwałego" />
+		<!-- MSR -->
+		<col name="MetodaWRMSR" type="MetodaObliczeniaWartosciMSR" category="MSR" description="Metoda obliczenia wartości rezydualnej MSR" />
+		<col name="WspolczynnikWRMSR" type="percent" category="MSR" description="Wartość współczynnika obliczenia wartości rezydualnej MSR" />
+		<col name="WartoscWRMSR" type="currency" category="MSR" description="Wartość rezydualna MSR" />
+	</table>
+
+
+	<!--DOKUMENTST-->
+	<table name="DokumentST" name8="DokST" tablename="DokumentyST" tablecaption="Dokumenty ŚT" caption="Dokumenty ŚT" guided="Root" >
+		<interface>IDokumentKsiegowalny</interface>
+
+		<key name="WgTypu" keyprimary="true" >
+			<keycol name="Typ" />
+			<keycol name="SrodekTrwaly" />
+			<keycol name="DataOperacji" />
+		</key>
+		<key name="WgData" >
+			<keycol name="Data" />
+		</key>
+		<key name="WgDataOperacji" >
+			<keycol name="DataOperacji" />
+		</key>
+
+		<col name="Typ" type="TypDokumentu" required="true" readonly="true" selector="true" category="Ogólne" description="Typ dokumentu środków trwałych" />
+		<col name="Numer" type="NumerDokumentu" category="Ogólne" description="Numer dokumentu" />
+		<col name="Definicja" type="DefinicjaDokumentu" cstype="DokumentST.DefDok" required="true" category="Ogólne" description="Definicja dokumentu" />
+		<col name="Oddzial" type="OddzialFirmy" category="Ogólne" description="Oddział firmy" relright="true" >
+			<verifier name="OddzialRightsVerifier" onadded="true" />
+			<verifier name="OddzialRequiredVerifier" onadded="true" />
+		</col>
+		<col name="Bufor" type="boolean" description="Bufor" category="Ogólne" />
+		<col name="Data" type="date" required="true" modifier="public virtual" category="Ogólne" description="Data dokumentu" />
+		<col name="DataOperacji" type="date" required="true" modifier="public virtual" category="Ogólne" description="Data operacji" />
+		<col name="Tytul" type="TytulDokumentuST" required="true" caption="Tytuł" relname="Tytuł dokumentu ŚT" category="Ogólne" description="Tytuł dokumentu środków trwałych" />
+		<!--Dokument dodatkowy-->
+		<col name="NumerDokumentuDodatkowego" type="string" modifier="public virtual" length="40" name12="NrDokDod" category="Dokument dodatkowy" description="Numer dokumentu dodatkowego" />
+		<col name="DataDokumentuDodatkowego" name12="DataDokDod" type="date" modifier="public virtual" category="Ogólne" description="Data dokumentu dodatkowego" />
+		<col name="IdentDokumentuDodatkowego" type="guid" category="Dokument dodatkowy" modifier="internal" readonly="set" description="GUID dokumentu dodatkowego" />
+		<!--Historia środka-->
+		<col name="Historia" type="SrodekTrwalyBaseHistoria" category="Historia środka" description="Zapis historyczny środka związany z tym dokumentem" readonly="set" children="Dokumenty" relname="Dokumenty zmiany parametrów historii środka" />
+		<col name="SrodekTrwaly" type="SrodekTrwalyBase" category="Historia środka" description="Środek związany z tym dokumentem" readonly="set" children="Dokumenty" relname="Dokumenty zmiany parametrów środka" />
+		<col name="NumerProceduryISO" type="string" length="20" readonly="set" category="ISO" description="Numer procedury ISO" />
+		<col name="MiejsceUzytkowaniaDokumentu" type="MiejsceUzytkowania" category="Ogólne" description="Miejsce użytkowania, dla którego powstał dokument" relname="Dokumenty miejsca użytkowania" />
+	</table>
+
+
+	<!--OBROTST-->
+	<table name="ObrotST" tablename="ObrotyST" tablecaption="Obroty środków trwałych" caption="Obrót środka trwałego" >
+		<key name="WgSrodkaTypu" >
+			<keycol name="SrodekTrwaly" />
+			<keycol name="Typ" />
+			<keycol name="Data" />
+		</key>
+		<key name="WgSrodkaDatyKsiegowania" >
+			<keycol name="SrodekTrwaly" />
+			<keycol name="DataKsiegowania" />
+		</key>
+
+		<col name="Typ" type="TypObrotuST" required="true" readonly="true" selector="true" category="Ogólne" description="Typ obrotu środka trwałego" />
+		<col name="Kierunek" type="KierunekObrotuST" category="Ogólne" description="Kierunek obrotu środka trwałego" />
+		<col name="Dokument" type="DokumentST" required="true" readonly="true" relname="Obrotu dokumentu ST" children="Pozycje" reldefault="true" relguided="inner" keyclass="Lp" keyclasscol="Lp" keyprimary="true" delete="cascade" category="Ogólne" description="Dokument obrotu środka trwałego" />
+		<col name="Lp" type="int" batchfield="false" category="Ogólne" description="Liczba porządkowa obrotu w dokumencie" />
+		<col name="Data" type="date" required="true" category="Ogólne" description="Data obrotu" />
+		<col name="DataKsiegowania" type="date" caption="Data księgowania" category="Ogólne" description="Data księgowania obrotu" />
+		<col name="SrodekTrwaly" type="SrodekTrwalyBase" required="true" relname="Obroty środka trwałego" children="Obroty" caption="Środek trwały" category="Ogólne" description="Środek trwały" >
+			<keycol name="Data" />
+		</col>
+		<col name="WartoscBilansowa" type="currency" name12="WartoscB" caption="Wartość bilansowa" category="Ogólne" description="Wartość bilansowa obrotu" />
+		<col name="WartoscPodatkowa" type="currency" name12="WartoscP" caption="Wartość podatkowa" category="Ogólne" description="Wartość podatkowa obrotu" />
+		<col name="Ilosc" type="double" caption="Ilość" category="Ogólne" description="Ilość inwentarzowa" />
+		<col name="Uwagi" type="string" length="255" category="Ogólne" description="Uwagi" />
+	</table>
+
+
+	<!--WYPOSAZENIE (OBSOLETE)-->
+	<table name="Wyposazenie" name8="Wyposaz" tablename="EwidWyposazenia" caption="Wyposażenie" tablecaption="Ewidencja wyposażenia" guided="Root" >
+		<interface>IInwentarz</interface>
+		<interface>IKodowany</interface>
+		<interface>IZasobCRM</interface>
+
+		<key name="WgNazwy" >
+			<keycol name="Nazwa" />
+		</key>
+		<key name="WgNumeruInwentarzowego" keyprimary="true" keyunique="true" >
+			<keycol name="NumerInwentarzowy" />
+		</key>
+
+		<col name="NumerInwentarzowy" type="string" length="40" required="true" category="Ogólne" description="Numer inwentarzowy środka trwałego" />
+		<col name="Nazwa" type="string" length="120" required="true" category="Ogólne" description="Nazwa wyposażenia" >
+			<attribute>Dictionary("Nazwa wyposaż", ManualList=true)</attribute>
+		</col>
+		<col name="NumerFabryczny" type="string" length="40" category="Ogólne" description="Numer fabryczny wyposażenia" />
+		<col name="Opis" type="string" length="255" category="Ogólne" description="Opis środka wyposażenia" >
+			<attribute>ControlEdit(ControlEditKind.Memo)</attribute>
+		</col>
+		<col name="PozyskanieNrDokumentu" type="string" length="40" name12="PozyskNrDok" category="Inwentarz w firmie" caption="Nr dokumentu pozyskania" />
+		<col name="PozyskanieData" type="date" name12="PozyskData" category="Inwentarz w firmie" caption="Data pozyskania" />
+		<col name="ZbycieNrDokumentu" type="string" length="40" name12="ZbytNrDok" category="Inwentarz w firmie" caption="Nr dokumentu zbycia" />
+		<col name="ZbycieData" type="date" name12="ZbytData" category="Inwentarz w firmie" caption="Data zbycia" />
+		<col name="MiejsceUzytkowania" type="MiejsceUzytkowania" category="System" relname="Miejsce użytkowania wyposażenia" relright="true" >
+			<verifier name="Wyposazenie.MiejsceUzytkowaniaRequiredVerifier" onadded="true" />
+		</col>
+	</table>
+
+
+	<!--WYPOSAZENIEHISTORIA (OBSOLETE) -->
+	<table name="WyposazenieHistoria" name8="WypHist" tablename="EwidWyposazeniaH" caption="Wyposażenie - historia" tablecaption="Ewidencja wyposażenia - historia" >
+		<col name="Wyposazenie" type="Wyposazenie" readonly="true" required="true" relname="Zapis historyczny wyposażenia" reldefault="true" delete="cascade" relguided="inner" relright="true" children="Historia" keyclass="History" keyclasscol="Aktualnosc" keyprimary="true" />
+		<col name="Aktualnosc" name12="Akt" type="FromTo" required="true" category="Historia" />
+		<col name="Ilosc" type="int" required="true" caption="Ilość" />
+		<col name="JednostkaMiary" type="Jednostka" required="true" caption="Jm." />
+		<col name="Wartosc" type="currency" caption="Wartość" />
+		<col name="MiejsceUzytkowania" type="MiejsceUzytkowania" name12="MiejscUzytk" caption="Miejsce użytkowania" relname="Miejsce użytkowania wyposażenia" category="Inwentarz w firmie" description="Miejsce użytkowania środeka trwałego" />
+		<col name="Odpowiedzialny" type="Pracownik" relname="Wyposażenie pracownika" children="EwidencjaWyposazeniaHistoria" category="Inwentarz w firmie" description="Pracownik odpowiedzialny za wyposażenie" />
+		<col name="Nazwisko" type="string" length="30" category="Inwentarz w firmie" description="Nazwisko osoby odpowiedzialnej za wyposażenie" />
+		<col name="WartoscRynkowa" type="currency" name12="WartRynk" caption="Wartość rynkowa" category="Stan" description="Wartość rynkowa wysposażenia" />
+		<col name="DataWyceny" type="date" category="Stan" description="Data wyceny wartości rynkowej wysposażenia" />
+	</table>
+</module>
