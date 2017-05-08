@@ -1,28 +1,46 @@
-﻿using Soneta.Business;
+﻿using enova365.TwoFactorAuth;
+using Soneta.Business;
 using Soneta.Business.App;
+using System;
+using System.Drawing;
+using System.IO;
+using Soneta.Core;
 
-[assembly: Service(typeof(ILoginListenerUI), typeof(enova365.TwoFactorAuth.MyListener), Priority = 200)]
+
 
 namespace enova365.TwoFactorAuth
 {
     public class TwoFactor
     {
-        [Context]
-        public Context Context { get; set; }
+        private readonly TwoFactorAuthNet.TwoFactorAuth _tfa;
+        private readonly string _sharedSecret;
+        private readonly string _code;
 
-        public string Komunikat
+        public TwoFactor(string firma, string oper)
         {
-            get { return "przykład lalaal"; }
+            _tfa = new TwoFactorAuthNet.TwoFactorAuth(firma);
+            _sharedSecret = _tfa.CreateSecret();
+            _code = _tfa.GetQrCodeImageAsDataUri(oper, _sharedSecret);
         }
-    }
 
-    public class MyListener : ILoginListenerUI
-    {
-        Soneta.Types.Currency c1 = Soneta.Types.Currency.Zero;
-
-        public void AfterLoginResult(AfterLoginResultArgs args)
+        public TwoFactor()
         {
-            args.Values.Add( new TwoFactor());
+            _tfa = new TwoFactorAuthNet.TwoFactorAuth();
+        }
+
+        public string GetSharedSecret()
+        {
+            return _sharedSecret;
+        }
+
+        public string GetQrImage()
+        {
+            return "<html> <img src=\" " + _code + "\"></html>";
+        }
+
+        public bool Verify(string secretCode, string userCode)
+        {
+            return _tfa.VerifyCode(secretCode, userCode);
         }
     }
 }

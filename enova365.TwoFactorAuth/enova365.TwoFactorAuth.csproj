@@ -52,16 +52,23 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Drawing" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
+    <Reference Include="TwoFactorAuth.Net, Version=1.2.1.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\TwoFactorAuth.Net.1.2.1\lib\net45\TwoFactorAuth.Net.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Rejestracje.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TwoFactor.cs" />
+    <Compile Include="TwoFactorAuthentication.cs" />
+    <Compile Include="TwoFactorExtender.cs" />
+    <Compile Include="TwoFactorInfo.cs" />
     <Compile Include="Utils\Tools.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -97,11 +104,17 @@
     <Content Include="Generator\Workflow.business.xml" />
     <Content Include="Generator\Zadania.business.xml" />
     <Content Include="Soneta.Generator.exe" />
-    <EmbeddedResource Include="UI\TwoFactor.General.pageform.xml">
+    <EmbeddedResource Include="UI\TwoFactorInfo.General.pageform.xml" />
+    <EmbeddedResource Include="UI\Config.TwoFactorExtender.pageform.xml" />
+    <EmbeddedResource Include="UI\TwoFactorAuthentication.General.pageform.xml">
       <SubType>Designer</SubType>
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\packages\TwoFactorAuth.Net.1.2.1\TwoFactorAuth.Net.Documentation.chm">
+      <Link>Documentation\TwoFactorAuth.Net.Documentation.chm</Link>
+    </None>
+    <None Include="packages.config" />
     <None Include="Schema\Business.xsd">
       <SubType>Designer</SubType>
     </None>

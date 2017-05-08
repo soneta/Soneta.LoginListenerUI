@@ -1,4 +1,6 @@
-﻿using Soneta.Types;
+﻿using Soneta.Business;
+using Soneta.Core;
+using Soneta.Types;
 
 namespace enova365.TwoFactorAuth.Utils
 {
@@ -13,5 +15,15 @@ namespace enova365.TwoFactorAuth.Utils
 #pragma warning restore 414
 
         public const string Version = "1.0";
+
+        public static string EnovaOperator(Session session)
+        {
+            return session.Login.OperatorName;
+        }
+
+        public static string Company(Session session)
+        {
+            return session.Get<CoreModule>().Config.Firma.Pieczątka.NazwaSkrócona;
+        }
     }
 }
