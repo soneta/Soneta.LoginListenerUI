@@ -63,12 +63,20 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Informacja.cs" />
     <Compile Include="Rejestracje.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="TwoFactor.cs" />
-    <Compile Include="TwoFactorAuthentication.cs" />
-    <Compile Include="TwoFactorExtender.cs" />
-    <Compile Include="TwoFactorInfo.cs" />
+    <Compile Include="TwoFactor.business.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>TwoFactor.business.xml</DependentUpon>
+    </Compile>
+    <Compile Include="TwoFactor\TwoFactor.cs" />
+    <Compile Include="TwoFactor\TwoFactorAuthentication.cs" />
+    <Compile Include="TwoFactor\TwoFactorInfo.cs" />
+    <Compile Include="TwoFactor\Secret.cs" />
+    <Compile Include="TwoFactor\Secrets.cs" />
+    <Compile Include="TwoFactor\TwoFactorRegistration.cs" />
     <Compile Include="Utils\Tools.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -104,8 +112,17 @@
     <Content Include="Generator\Workflow.business.xml" />
     <Content Include="Generator\Zadania.business.xml" />
     <Content Include="Soneta.Generator.exe" />
-    <EmbeddedResource Include="UI\TwoFactorInfo.General.pageform.xml" />
-    <EmbeddedResource Include="UI\Config.TwoFactorExtender.pageform.xml" />
+    <Content Include="TwoFactor.business.xml">
+      <Generator>BusinessGenerator</Generator>
+      <LastGenOutput>TwoFactor.business.cs</LastGenOutput>
+      <SubType>Designer</SubType>
+    </Content>
+    <EmbeddedResource Include="UI\TwoFactorRegistration.General.pageform.xml">
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UI\Informacja.General.pageform.xml">
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
     <EmbeddedResource Include="UI\TwoFactorAuthentication.General.pageform.xml">
       <SubType>Designer</SubType>
     </EmbeddedResource>

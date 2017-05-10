@@ -1,9 +1,9 @@
 ﻿<?xml version="1.0"?>
 <DataForm xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns="http://www.enova.pl/schema/form.xsd" Contexts="License.All">
-  <Page CaptionHtml="Komunikat " DataContext="{DataSource}">
-    <Group CaptionHtml="Przykładowy nagłówek  komunikatu">
-      <Label CaptionHtml="Key" />
-
+  <Page CaptionHtml="Weryfikacja użytkownika " DataContext="{DataSource}">
+    <Group CaptionHtml="" Class="CenterLabel">
+      <Label CaptionHtml="Podaj kod wygenerowany w aplikacji." />
+      <Field CaptionHtml="Kod" EditValue="{CodeFromDevice}"/>
     </Group>
   </Page>
 </DataForm>

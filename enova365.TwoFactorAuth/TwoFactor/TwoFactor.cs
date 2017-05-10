@@ -1,14 +1,4 @@
-﻿using enova365.TwoFactorAuth;
-using Soneta.Business;
-using Soneta.Business.App;
-using System;
-using System.Drawing;
-using System.IO;
-using Soneta.Core;
-
-
-
-namespace enova365.TwoFactorAuth
+﻿namespace enova365.TwoFactorAuth
 {
     public class TwoFactor
     {

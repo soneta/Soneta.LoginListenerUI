@@ -1,0 +1,11 @@
+﻿<?xml version="1.0"?>
+<DataForm xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns="http://www.enova.pl/schema/form.xsd" Contexts="License.All">
+  <Page CaptionHtml="Konfiguracja Multi-factor authentication " DataContext="{DataSource}">
+    <Group CaptionHtml="" Class="CenterLabel">
+      <Label CaptionHtml="Zeskanuj kod QR odpowiednią aplikacją lub przepisz kod do aplikacji. Następnie wygenerowany kod wpisz w polu poniżej"/>
+      <Field EditValue="{SharedSecret}" CaptionHtml="SharedKey" Width ="20" />
+      <Html EditValue="{QrCode}" Width="50" Height="20" />
+      <Field CaptionHtml="Kod" EditValue="{CodeFromDevice}"/>
+    </Group>
+  </Page>
+</DataForm>

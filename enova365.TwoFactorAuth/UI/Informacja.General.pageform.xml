@@ -4,10 +4,8 @@
           xmlns="http://www.enova.pl/schema/form.xsd">
   <Page Name="RejestracjaPage" CaptionHtml="Rejestracja" DataContext="{DataSource}">
 
-    <Group CaptionHtml="Dane">
-      <Field EditValue="{SharedSecret}" CaptionHtml="SharedKey" Width ="20" />
-      <Html EditValue="{QrCode}" Width="100" Height="20"/>
-      <Field EditValue="{Code}" CaptionHtml="Kod" Width="20"/>
+    <Group CaptionHtml="Testowy">
+      <Label CaptionHtml="{Komunikat}"/>
       
     </Group>
     

@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using enova365.TwoFactorAuth.Utils;
 using Soneta.Business;
+using Soneta.Business.Db;
 using Soneta.Business.UI;
 using Soneta.Types;
 
@@ -27,7 +28,6 @@ namespace enova365.TwoFactorAuth
 
         private string _code;
 
-        private string _qrCode;
 
         public string SharedSecret
         {
@@ -50,6 +50,20 @@ namespace enova365.TwoFactorAuth
 
             if(!TwoFactor.Verify(SharedSecret, Code))
                 throw new Exception("Zły kod");
+            else
+            {
+                using (Session ses = _session.Login.CreateSession(false, false))
+                {
+                    using (ITransaction trans = ses.Logout(true))
+                    {
+                        var secret = new Secret(ses.Login.Operator) {SharedSecret = SharedSecret};
+                        TwoFactorModule.GetInstance(ses).Secrets.AddRow(secret);
+                        trans.CommitUI();
+                    }
+                    ses.Save();
+                }
+
+            }
         }
 
 
