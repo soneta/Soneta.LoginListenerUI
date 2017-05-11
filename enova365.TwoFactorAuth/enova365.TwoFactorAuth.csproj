@@ -73,7 +73,6 @@
     </Compile>
     <Compile Include="TwoFactor\TwoFactor.cs" />
     <Compile Include="TwoFactor\TwoFactorAuthentication.cs" />
-    <Compile Include="TwoFactor\TwoFactorInfo.cs" />
     <Compile Include="TwoFactor\Secret.cs" />
     <Compile Include="TwoFactor\Secrets.cs" />
     <Compile Include="TwoFactor\TwoFactorRegistration.cs" />
@@ -117,6 +116,9 @@
       <LastGenOutput>TwoFactor.business.cs</LastGenOutput>
       <SubType>Designer</SubType>
     </Content>
+    <EmbeddedResource Include="UI\Informacja2.General.pageform.xml">
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
     <EmbeddedResource Include="UI\TwoFactorRegistration.General.pageform.xml">
       <SubType>Designer</SubType>
     </EmbeddedResource>

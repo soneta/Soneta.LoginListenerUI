@@ -6,6 +6,7 @@ using Soneta.Business;
 using Soneta.Business.App;
 using Soneta.Business.Db;
 using Soneta.Business.UI;
+using Soneta.Tools;
 using Soneta.Types;
 
 [assembly: Service(typeof(ILoginListenerUI), typeof(enova365.TwoFactorAuth.RegistrationListener), Priority = 200)]
@@ -13,16 +14,17 @@ using Soneta.Types;
 
 namespace enova365.TwoFactorAuth
 {
-    [DataFormStyle(UseDialog = true)]
+    [DataFormStyle(UseDialog = true, DefaultHeight = 400, DefaultWidth = 60)]
     [Caption("Konfiguracja podwójnego logowania")]
     public class TwoFactorRegistration : IVerifiable, ICommittable
     {
         Context _context;
 
-        public TwoFactorRegistration(Context ctx, Session session)
+        public TwoFactorRegistration(Context ctx)
         {
             _context = ctx;
-            _twoFactor = new TwoFactor(Tools.Company(session), Tools.EnovaOperator(session));
+            _twoFactor = new TwoFactor(Tools.Company(ctx.Session), Tools.EnovaOperator(ctx.Session));
+            ctx.Session.Verifiers.Add(new CodeVerifier(this));
         }
 
         private readonly TwoFactor _twoFactor;
@@ -47,6 +49,7 @@ namespace enova365.TwoFactorAuth
                 trans.CommitUI();
             }
         }
+
         public object OnCommitting(Context cx)
         {
             using (Session session = cx.Login.CreateSession(false, true))
@@ -78,6 +81,8 @@ namespace enova365.TwoFactorAuth
 
             protected override bool IsValid()
             {
+                if (_twoFactorRegistration.CodeFromDevice.IsNullOrEmpty())
+                    return false;
                 if (_twoFactorRegistration._twoFactor.Verify(_twoFactorRegistration.SharedSecret,
                     _twoFactorRegistration.CodeFromDevice))
                 {
@@ -93,7 +98,7 @@ namespace enova365.TwoFactorAuth
         public void AfterLoginResult(AfterLoginResultArgs args)
         {
             if (TwoFactorModule.GetInstance(args.Context.Session).Secrets.WgOperator[args.Context.Session.Login.Operator] == null)
-                args.Values.Add(new TwoFactorRegistration(args.Context, args.Context.Session));
+                args.Values.Add(new TwoFactorRegistration(args.Context));
         }
     }
 }

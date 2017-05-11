@@ -25,7 +25,7 @@
 
         public string GetQrImage()
         {
-            return "<html> <img src=\" " + _code + "\"></html>";
+            return "<html> <center><img src=\" " + _code + "\"></center></html>";
         }
 
         public bool Verify(string secretCode, string userCode)
