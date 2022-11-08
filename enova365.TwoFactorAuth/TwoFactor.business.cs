@@ -37,16 +37,17 @@ namespace enova365.TwoFactorAuth {
 
 		TwoFactorModule(Session session) : base(session) {}
 
-		private static Soneta.Business.App.TableInfo tableInfoSecrets = new Soneta.Business.App.TableInfo.Create<Secrets, Secret, SecretRecord>("Secret") {
+		public static readonly Soneta.Business.App.TableInfo SecretsTableInfo = new Soneta.Business.App.TableInfo.Create<Secrets, Secret, SecretRecord>("Secret") {
 			IsConfig = true,
 		};
 
-		public Secrets Secrets => (Secrets)Session.Tables[tableInfoSecrets];
+		public Secrets Secrets => (Secrets)Session.Tables[SecretsTableInfo];
 
-		private static Soneta.Business.App.KeyInfo keyInfoSecretOperator = new Soneta.Business.App.KeyInfo(tableInfoSecrets, table => new SecretTable.OperatorRelation(table)) {
+		private static Soneta.Business.App.KeyInfo keyInfoSecretOperator = new Soneta.Business.App.KeyInfo(SecretsTableInfo, table => new SecretTable.OperatorRelation(table)) {
 			Name = "Klucz operatora",
 			RelationTo = "Operator",
 			DeleteCascade = true,
+			PrimaryRelation = true,
 			Guided = RelationGuidedType.Inner,
 			Unique = true,
 			PrimaryKey = true,
@@ -67,7 +68,7 @@ namespace enova365.TwoFactorAuth {
 
 			protected SecretTable() {}
 
-			public class OperatorRelation : Key<Secret> {
+			public partial class OperatorRelation : Key<Secret> {
 				internal OperatorRelation(Table table) : base(table) {
 				}
 
@@ -87,6 +88,8 @@ namespace enova365.TwoFactorAuth {
 			/// </summary>
 			/// <seealso cref="TwoFactorModule"/>
 			public new TwoFactorModule Module => (TwoFactorModule)base.Module;
+
+			public System.Linq.IQueryable<Secret> AsQuery() => AsQuery<Secret>();
 
 			/// <summary>
 			/// Typowany indekser dostarczający obiekty znajdujące się w tej tabeli przy pomocy 
@@ -125,14 +128,14 @@ namespace enova365.TwoFactorAuth {
 				record = (SecretRecord)rec;
 			}
 
-			protected SecretRow(RowCreator creator) : base(false) {
-			}
-
+			protected SecretRow(RowCreator creator) : base(false) {}
 			protected SecretRow([Required] Operator _operator) : base(true) {
 				if (_operator==null) throw new RequiredException(this, "Operator");
 				GetRecord();
 				record.Operator = _operator;
 			}
+
+			protected override Row PrimaryRow => (Row)Operator;
 
 			[Required]
 			public Operator Operator {
@@ -169,7 +172,7 @@ namespace enova365.TwoFactorAuth {
 			[Browsable(false)]
 			public TwoFactorModule Module => Table.Module;
 
-			protected override Soneta.Business.App.TableInfo TableInfo => tableInfoSecrets;
+			protected override Soneta.Business.App.TableInfo TableInfo => SecretsTableInfo;
 
 			public sealed override AccessRights GetObjectRight() {
 				AccessRights ar = CalcObjectRight();
@@ -295,6 +298,9 @@ namespace enova365.TwoFactorAuth {
 	[System.CodeDom.Compiler.GeneratedCode("Soneta.Generator", "4")]
 	public static class StaticsTwoFactorModule {
 		public static TwoFactorModule GetTwoFactor(this Session session) => TwoFactorModule.GetInstance(session);
+
+		public static TResult Record<TResult>(this IRecordInvoker<Secret, TResult> row, Action<TwoFactorModule.SecretRecord> action)
+		    => row.InvokeAction(action, (rec, act) => ((Action<TwoFactorModule.SecretRecord>)act)((TwoFactorModule.SecretRecord)rec));
 	}
 
 }

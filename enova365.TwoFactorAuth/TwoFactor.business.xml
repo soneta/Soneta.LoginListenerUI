@@ -1,8 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <module xmlns="http://www.enova.pl/schema/business_struct.xsd" name="TwoFactor" namespace="enova365.TwoFactorAuth" versionName="TwoFactor" versionNumber="3">
 
-  <import>Generator</import>
-
   <using>Soneta.Business.App</using>
 
   <table name="Secret" tablename="Secrets" caption="SharedSecrets operatorów" config="true" guided="None">

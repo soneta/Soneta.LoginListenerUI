@@ -9,16 +9,17 @@ using Soneta.Business.UI;
 using Soneta.Tools;
 using Soneta.Types;
 
-[assembly: Service(typeof(ILoginListenerUI), typeof(enova365.TwoFactorAuth.RegistrationListener), Priority = 200)]
+[assembly: Service(typeof(ILoginListenerUI), typeof(enova365.TwoFactorAuth.RegistrationListener), ServiceScope.Login, Priority = 200)]
 [assembly: SpecialAccessSection(typeof(Secret), "Zapisz SharedSecret", typeof(TwoFactorRegistration), "SaveSharedSecret")]
 
 namespace enova365.TwoFactorAuth
 {
     [DataFormStyle(UseDialog = true, DefaultHeight = 400, DefaultWidth = 60)]
     [Caption("Konfiguracja podwójnego logowania")]
-    public class TwoFactorRegistration : IVerifiable, ICommittable
+    public class TwoFactorRegistration : IVerifiable, ICommittable, IContextable
     {
         Context _context;
+        public Context Context => _context;
 
         public TwoFactorRegistration(Context ctx)
         {
@@ -55,7 +56,7 @@ namespace enova365.TwoFactorAuth
             using (Session session = cx.Login.CreateSession(false, true))
             {
                 var bm = BusinessModule.GetInstance(session);
-                var row = new Secret(bm.Operators.ByName[cx.Login.OperatorName]) { SharedSecret = SharedSecret };
+                var row = new Secret(bm.Operators.ByName[cx.Login.UserName]) { SharedSecret = SharedSecret };
                 session.ExecuteSpecialAccessSection((Method<Secret, Session>)SaveSharedSecret, row, session);
                 session.Save();
             }
